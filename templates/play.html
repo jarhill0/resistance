@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Play!</title>
+    <style>
+        #keywords {
+            min-height: 100px;
+        }
+    </style>
+</head>
+<body onload="setUp()">
+Hello, {{ user }}!
+<br>
+<form>
+    <div id="keywords-wrapper">
+        <div id="keywords"></div>
+        <br>
+        <input type="button" onclick="addRow()" title="add row" value="+">
+        <input type="button" onclick="removeRow()" title="remove row" value="-">
+    </div>
+    <br>
+    <button onclick="sendMessage()" type="button">Submit</button>
+</form>
+<ul></ul>
+<script>
+    const socket = new WebSocket(' {{url_for("ws", game_id=42) }}');
+    socket.onmessage = function (event) {
+        const messages_dom = document.getElementsByTagName('ul')[0];
+        const message_dom = document.createElement('li');
+        const content_dom = document.createTextNode(event.data);
+        message_dom.appendChild(content_dom);
+        messages_dom.appendChild(message_dom);
+    };
+
+    function sendMessage() {
+        const fields = document.getElementById("keywords");
+        let move = {};
+        for (let i = 0; i < fields.children.length; i++) {
+            const row = fields.children[i];
+            const key = row.children[0].children[0].value;
+            const value = row.children[1].children[0].value;
+            if (key || value)
+                move[key] = value;
+        }
+
+        socket.send(JSON.stringify(move));
+    }
+</script>
+<script>
+    let keywords;
+    let keywordsCounter = 0;
+
+    function setUp() {
+        keywords = document.getElementById("keywords");
+        for (let i = 0; i < 3; i++)
+            addRow();
+    }
+
+    function addRow() {
+        keywords.appendChild(makeRow());
+    }
+
+    function removeRow() {
+        const children = keywords.childNodes;
+        let toRemove = children.item(children.length - 1);
+        while (toRemove.tagName !== "DIV") {
+            keywords.removeChild(toRemove);
+            toRemove = children.item(children.length - 1);
+        }
+        if (isEmpty(toRemove) && keywordsCounter >= 1) {
+            keywords.removeChild(toRemove);
+            keywordsCounter--;
+        }
+    }
+
+    function isEmpty(row) {
+        const children = row.childNodes;
+        for (let i = 0; i < children.length; i++) {
+            for (let j = 0; j < children.item(i).childNodes.length; j++) {
+                const child = children.item(i).childNodes.item(j);
+                if (child.tagName === "INPUT" && child.value !== "")
+                    return false;
+            }
+        }
+        return true;
+    }
+
+    function makeRow() {
+        const row = document.createElement("div");
+
+        { // for the key
+            const label = document.createElement("label");
+            label.innerText = "Key " + ++keywordsCounter + " ";
+            const input = document.createElement("input");
+            input.type = "text";
+            label.appendChild(input);
+            row.appendChild(label);
+        }
+
+        { // for the value
+            const label = document.createElement("label");
+            label.innerText = " Value ";
+            const input = document.createElement("input");
+            input.type = "text";
+            label.appendChild(input);
+            row.appendChild(label);
+        }
+
+        return row;
+    }
+</script>
+</body>
+</html>
