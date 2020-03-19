@@ -1,4 +1,6 @@
 from enum import Enum, auto
+from random import choices
+from random import randint
 
 
 class GameStates(Enum):
@@ -176,24 +178,37 @@ class Game:
     def make_roles(self):
         """Assign roles to players."""
         num_roles = len(self.players)
-
-        # TODO (Elizabeth): determine the right number of spies for how many players there are
-        num_spies = 0
-        # TODO (Elizabeth): randomly select that many spies from our players
-        self.spies = {"joseph"}
+    
+        if num_roles == 5 or 6:
+            num_spies = 2
+        elif num_roles == 7 or 8:
+            num_spies = 3
+        else:
+            num_spies = 4
+        
+        self.spies = choices(self.players, k=num_spies)
 
     def choose_mission_leader(self):
         """Randomly select a player to be the first mission leader."""
         num_players = len(self.players)
         # TODO (Elizabeth): choose a random number >= 0 and < num_players
-        self.mission_leader = 0
+        self.mission_leader = randint(0, num_players-1)
+        
 
     def mission_size(self):
         """Determine the number of people on the current mission."""
         num_players = len(self.players)
         # TODO (Elizabeth): Use num_players and self.round_num (where rounds are numbered 0-4, not 1-5)
+        num_agents_dict = {5:[2,3,2,3,3], 
+                           6:[2,3,4,3,4], 
+                           7:[2,3,3,4,4], 
+                           8:[3,4,4,5,5], 
+                           9:[3,4,4,5,5], 
+                           10:[3,4,4,5,5]}
+        
+        
         # TODO ------------ to figure out how many players are going on this mission and return it
-        return 2
+        return num_agents_dict[num_players][self.round_num]
 
     def validate_mission(self, mission):
         """
@@ -242,3 +257,7 @@ class Game:
         """Check if the resistance won. Assume the game is over."""
         # TODO (Elizabeth): Use self.successes to determine if the resistance won or not.
         return True
+
+#5 or 6 players = 2 spies
+#7-9 players = 3 spies 
+#10 = 4 spies 

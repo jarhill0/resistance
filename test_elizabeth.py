@@ -3,7 +3,7 @@ from game import Game
 game = Game([], ("a", "b", "c", "d", "e", "f"))
 
 game.make_roles()
-assert len(game.spies) == 3
+assert len(game.spies) == 2
 
 game.choose_mission_leader()
 assert 0 <= game.mission_leader < len(game.players)
