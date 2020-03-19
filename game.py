@@ -21,6 +21,7 @@ class Game:
         self.mission = None
         self.nom_votes = dict()
         self.mission_votes = dict()
+        self.nominations_rejected = 0
 
         self.STATES = {
             GameStates.NOT_STARTED: self.not_started,
@@ -48,18 +49,33 @@ class Game:
     async def start(self):
         self.choose_mission_leader()
         self.make_roles()
+
+        spy_message = {
+            "kind": "game_start",
+            "is_spy": True,
+            "spies": list(self.spies),
+            "players": self.players,
+        }
+        resistance_message = {
+            "kind": "game_start",
+            "is_spy": False,
+            "players": self.players,
+        }
         for connection, player_id in self.connections:
             if player_id in self.spies:
-                await connection.put(
-                    {"kind": "game_start", "is_spy": True, "spies": list(self.spies)}
-                )
+                await connection.put(spy_message)
             else:
-                await connection.put({"kind": "game_start", "is_spy": False})
+                await connection.put(resistance_message)
         await self.start_round()
 
     async def start_round(self):
+        self.nominations_rejected = 0
         await self.broadcast(
-            {"kind": "round_start", "mission_size": self.mission_size(),}
+            {
+                "kind": "round_start",
+                "mission_size": self.mission_size(),
+                "mission_number": self.round_num + 1,
+            }
         )
         await self.start_nomination()
 
@@ -67,7 +83,7 @@ class Game:
         mission_leader = self.players[self.mission_leader]
         self.state = GameStates.NOMINATING
         await self.broadcast(
-            {"kind": "round_start", "mission_leader": mission_leader,}
+            {"kind": "nomination_start", "mission_leader": mission_leader,}
         )
 
     async def nominating(self, player_id, move):
@@ -82,11 +98,15 @@ class Game:
                 self.nom_votes.clear()
                 self.mission = nominated_mission
                 await self.broadcast(
-                    {"kind": "mission_nominated", "mission": nominated_mission,}
+                    {
+                        "kind": "mission_nominated",
+                        "mission": nominated_mission,
+                        "mission_leader": player_id,
+                    }
                 )
 
     async def voting_mission(self, player_id, move):
-        if move.get("kind") == "vote":
+        if move.get("kind") == "nomination_vote":
             self.nom_votes[player_id] = bool(move.get("vote"))
             if len(self.nom_votes) == len(self.players):
                 await self.process_votes()
@@ -105,7 +125,17 @@ class Game:
             self.state = GameStates.RUNNING_MISSION
             await self.start_mission()
         else:
-            await self.start_nomination()
+            self.nominations_rejected += 1
+            if self.nominations_rejected == 5:
+                await self.broadcast(
+                    {
+                        "kind": "game_over",
+                        "resistance_won": False,
+                        "spies": list(self.spies),
+                    }
+                )
+            else:
+                await self.start_nomination()
 
     async def start_mission(self):
         self.mission_votes.clear()
@@ -123,9 +153,9 @@ class Game:
         await self.broadcast(
             {
                 "kind": "mission_result",
-                "round": self.round_num,
+                "mission_number": self.round_num + 1,
                 "mission_succeeded": mission_succeeded,
-                "mission": self.mission,
+                "num_fails": num_fails,
             }
         )
         if mission_succeeded:

@@ -9,28 +9,268 @@
         }
     </style>
 </head>
-<body onload="setUp()">
+<body>
 Hello, {{ user }}!
-<br>
-<form>
-    <div id="keywords-wrapper">
-        <div id="keywords"></div>
-        <br>
-        <input type="button" onclick="addRow()" title="add row" value="+">
-        <input type="button" onclick="removeRow()" title="remove row" value="-">
-    </div>
-    <br>
-    <button onclick="sendMessage()" type="button">Submit</button>
-</form>
 <ul></ul>
+<div id="gameField" style="background: peachpuff;">
+    <div id="players"></div>
+    <div id="alignment"></div>
+    <div id="currentStatus">Waiting for game to start…</div>
+    <button onclick="start_game()" id="startGameButton">Start Game</button>
+</div>
 <script>
+    const user = "{{ user }}";
+    let players = [];
+    let missionSize = -1;
+
     const socket = new WebSocket(' {{url_for("ws", game_id=42) }}');
+
+    const HANDLERS = {
+        "game_start": game_start,
+        "round_start": round_start,
+        "mission_nominated": mission_nominated,
+        "nomination_vote_results": nomination_vote_results,
+        "mission_start": mission_start,
+        "mission_result": mission_result,
+        "game_over": game_over,
+        "nomination_start": nomination_start,
+    };
+
+    function game_start(update) {
+        const startButton = document.getElementById("startGameButton");
+        startButton.parentElement.removeChild(startButton);
+
+        players = update.players;
+
+        const playersDiv = document.getElementById("players");
+        playersDiv.appendChild(document.createTextNode("Players:"));
+        const playersList = document.createElement("ul");
+        playersDiv.appendChild(playersList);
+        players.forEach(player => {
+            const li = document.createElement("li");
+            li.innerText = player;
+            playersList.appendChild(li);
+        });
+
+        const alignment = document.getElementById("alignment");
+        if (update.is_spy) {
+            const spiesList = document.createElement('ul');
+            update.spies.forEach(spy => {
+                const li = document.createElement('li');
+                li.innerText = spy;
+                spiesList.appendChild(li);
+            });
+
+            alignment.appendChild(document.createTextNode("You are a spy! The spies are:"));
+            alignment.appendChild(spiesList);
+        } else {
+            alignment.appendChild(document.createTextNode("You are resistance."))
+        }
+    }
+
+    function round_start(update) {
+        document.getElementById('currentStatus').textContent = '';
+        const currentMission = document.createElement("div");
+        currentMission.class = "mission";
+        currentMission.appendChild(document.createTextNode(
+            `Mission ${update.mission_number} (${update.mission_size} agents)`));
+        document.getElementById('currentStatus').appendChild(currentMission);
+        missionSize = update.mission_size;
+    }
+
+    function nomination_start(update) {
+        const currentStatus = document.getElementById('currentStatus');
+        currentStatus.appendChild(document.createElement("br"));
+
+        const nominationView = document.createElement("div");
+        nominationView.class = "nominationView";
+        currentStatus.appendChild(nominationView);
+        if (user === update.mission_leader) {
+            nominationView.appendChild(
+                document.createTextNode("You are the mission leader! Select your mission:")
+            );
+
+            const usersList = document.createElement("ul");
+            usersList.id = "nominationList";
+            players.forEach(player => {
+                const row = document.createElement("li");
+                const checkbox = document.createElement("input");
+                checkbox.type = "checkbox";
+                checkbox.name = player;
+                checkbox.checked = player === user;
+                row.appendChild(checkbox);
+                row.appendChild(document.createTextNode(player));
+                usersList.appendChild(row);
+            });
+            nominationView.appendChild(usersList);
+
+            const submitNomButton = document.createElement("button");
+            submitNomButton.onclick = submit_nomination;
+            submitNomButton.innerText = "Nominate";
+            nominationView.appendChild(submitNomButton);
+
+            nominationView.appendChild(document.createElement("br"));
+
+            const nominationErrorText = document.createElement("span");
+            nominationErrorText.id = "nominationErrorText";
+            nominationView.appendChild(nominationErrorText)
+        } else {
+            nominationView.appendChild(
+                document.createTextNode(`${update.mission_leader} is the mission leader.`)
+            )
+        }
+    }
+
+    function mission_nominated(update) {
+        const currentStatus = document.getElementById('currentStatus');
+        const nominationView = currentStatus.children[currentStatus.children.length - 1];
+        nominationView.textContent = '';
+
+        nominationView.appendChild(document.createTextNode(`${update.mission_leader} has nominated the following mission:`));
+        const mission = document.createElement("ol");
+        update.mission.forEach(agent => {
+            const li = document.createElement("li");
+            li.innerText = agent;
+            mission.appendChild(li);
+        });
+        nominationView.appendChild(mission);
+
+        const voteView = document.createElement("div");
+        voteView.class = "voteView";
+        currentStatus.appendChild(voteView);
+
+        voteView.appendChild(document.createTextNode("Do you approve of this mission?"));
+        voteView.appendChild(document.createElement("br"));
+
+        const approveButton = document.createElement("button");
+        approveButton.innerText = "Approve";
+        approveButton.onclick = () => nomination_vote(true);
+        voteView.appendChild(approveButton);
+
+        const rejectButton = document.createElement("button");
+        rejectButton.innerText = "Reject";
+        rejectButton.onclick = () => nomination_vote(false);
+        voteView.appendChild(rejectButton);
+
+        voteView.appendChild(document.createElement("br"));
+
+        const voteStatus = document.createElement("span");
+        voteStatus.id = "voteStatus";
+        voteView.appendChild(voteStatus);
+    }
+
+    function nomination_vote_results(update) {
+        const currentStatus = document.getElementById('currentStatus');
+        currentStatus.removeChild(currentStatus.children[currentStatus.children.length - 1]);
+
+        const results = document.createElement("div");
+        currentStatus.appendChild(results);
+        results.appendChild(document.createTextNode(
+            `This mission has been ${update.approved ? "approved" : "rejected"}. The votes were as follows:`));
+
+        const votes = document.createElement("ul");
+        results.appendChild(votes);
+        for (const [name, vote] of Object.entries(update.results)) {
+            const li = document.createElement("li");
+            li.innerText = `${name}: ${vote ? "approve" : "reject"}`;
+            votes.appendChild(li);
+        }
+    }
+
+    function mission_start(update) {
+        const mission = document.createElement("div");
+        document.getElementById("currentStatus").appendChild(mission);
+        if (update.mission.indexOf(user) >= 0) {
+            mission.appendChild(document.createTextNode("You're going on a mission! What do you do?"));
+
+            mission.appendChild(document.createElement("br"));
+
+            const pass = document.createElement("button");
+            pass.innerText = "Pass";
+            pass.onclick = () => mission_vote(true);
+            mission.appendChild(pass);
+
+            const fail = document.createElement("button");
+            fail.innerText = "Fail";
+            fail.onclick = () => mission_vote(false);
+            mission.appendChild(fail);
+
+            mission.appendChild(document.createElement("br"));
+
+            const missionStatus = document.createElement("span");
+            missionStatus.id = "missionStatus";
+            mission.appendChild(missionStatus);
+        } else {
+            mission.innerText = `A mission is occurring with ${list(update.mission)}.`
+        }
+    }
+
+    function mission_result(update) {
+    }
+
+    function game_over(update) {
+    }
+
+    function start_game() {
+        send({"kind": "start"});
+    }
+
+    function submit_nomination() {
+        const nomination = [];
+
+        const nominationList = document.getElementById("nominationList");
+        for (let i = 0; i < nominationList.children.length; i++) {
+            const nomRow = nominationList.children[i];
+            const checkbox = nomRow.children[0];
+            if (checkbox.checked) {
+                nomination.push(checkbox.name);
+            }
+        }
+
+        if (nomination.length !== missionSize) {
+            document.getElementById("nominationErrorText").innerText =
+                `Wrong size mission! You have ${nomination.length} agents but you should have ${missionSize}.`;
+        } else {
+            send({'kind': 'nominate', 'nomination': nomination});
+        }
+    }
+
+    function nomination_vote(vote) {
+        send({'kind': 'nomination_vote', 'vote': vote});
+        document.getElementById('voteStatus').innerText = `You have voted to ${vote ? "approve" : "reject"} the mission.`;
+    }
+
+    function mission_vote(vote) {
+        send({'kind': 'mission_vote', 'vote': vote});
+        document.getElementById('missionStatus').innerText = `You want the mission to ${vote ? "pass" : "fail"}.`;
+    }
+
+    function send(message) {
+        socket.send(JSON.stringify(message));
+    }
+
+    function list(words) {
+        if (words.length === 2) {
+            return `${words[0]} and ${words[1]}`;
+        }
+        let output = "";
+        for (let i = 0; i + 1 < words.length; i++) {
+            output += words[i] + ", ";
+        }
+        output += "and " + words[words.length - 1];
+        return output;
+    }
+
     socket.onmessage = function (event) {
         const messages_dom = document.getElementsByTagName('ul')[0];
         const message_dom = document.createElement('li');
         const content_dom = document.createTextNode(event.data);
         message_dom.appendChild(content_dom);
         messages_dom.appendChild(message_dom);
+
+        const update = JSON.parse(event.data);
+        const handler = HANDLERS[update.kind];
+        handler(update);
     };
 
     function sendMessage() {
@@ -45,69 +285,6 @@ Hello, {{ user }}!
         }
 
         socket.send(JSON.stringify(move));
-    }
-</script>
-<script>
-    let keywords;
-    let keywordsCounter = 0;
-
-    function setUp() {
-        keywords = document.getElementById("keywords");
-        for (let i = 0; i < 3; i++)
-            addRow();
-    }
-
-    function addRow() {
-        keywords.appendChild(makeRow());
-    }
-
-    function removeRow() {
-        const children = keywords.childNodes;
-        let toRemove = children.item(children.length - 1);
-        while (toRemove.tagName !== "DIV") {
-            keywords.removeChild(toRemove);
-            toRemove = children.item(children.length - 1);
-        }
-        if (isEmpty(toRemove) && keywordsCounter >= 1) {
-            keywords.removeChild(toRemove);
-            keywordsCounter--;
-        }
-    }
-
-    function isEmpty(row) {
-        const children = row.childNodes;
-        for (let i = 0; i < children.length; i++) {
-            for (let j = 0; j < children.item(i).childNodes.length; j++) {
-                const child = children.item(i).childNodes.item(j);
-                if (child.tagName === "INPUT" && child.value !== "")
-                    return false;
-            }
-        }
-        return true;
-    }
-
-    function makeRow() {
-        const row = document.createElement("div");
-
-        { // for the key
-            const label = document.createElement("label");
-            label.innerText = "Key " + ++keywordsCounter + " ";
-            const input = document.createElement("input");
-            input.type = "text";
-            label.appendChild(input);
-            row.appendChild(label);
-        }
-
-        { // for the value
-            const label = document.createElement("label");
-            label.innerText = " Value ";
-            const input = document.createElement("input");
-            input.type = "text";
-            label.appendChild(input);
-            row.appendChild(label);
-        }
-
-        return row;
     }
 </script>
 </body>

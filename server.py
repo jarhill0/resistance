@@ -21,7 +21,7 @@ app = Quart(__name__)
 app.connected_websockets = set()
 app.games = dict()
 
-app.games[42] = Game(app.connected_websockets, ("JOHN", "joseph"))
+app.games[42] = Game(app.connected_websockets, ("JOHN", "joseph", "Joshua"))
 
 
 def authenticated(route):
