@@ -1,5 +1,5 @@
 from enum import Enum, auto
-from random import choices
+from random import sample
 from random import randint
 
 
@@ -12,9 +12,9 @@ class GameStates(Enum):
 
 
 class Game:
-    def __init__(self, connections, players):
+    def __init__(self, connections):
         self.connections = connections  # mutable reference outside of this scope.
-        self.players = players  # should be immutable or owned by this class
+        self.players = ()  # should be immutable or owned by this class
         self.state = GameStates.NOT_STARTED
         self.spies = None
         self.mission_leader = None
@@ -30,6 +30,7 @@ class Game:
             GameStates.NOMINATING: self.nominating,
             GameStates.VOTING_MISSION: self.voting_mission,
             GameStates.RUNNING_MISSION: self.running_mission,
+            GameStates.GAME_OVER: self.game_is_over,
         }
 
     async def player_move(self, player_id, move):
@@ -41,28 +42,37 @@ class Game:
         if kind == "start":
             await self.start()
 
+    async def game_is_over(self):
+        pass
+
     async def broadcast(self, message):
         for client, _ in self.connections:
             await client.put(message)
 
-    def has_player(self, player_id):
-        return player_id in self.players
+    def can_join(self, player_id):
+        if self.state == GameStates.NOT_STARTED:
+            return True
+        else:
+            return player_id in self.players
 
     async def start(self):
+        self.players = tuple(set(name for _, name in self.connections))
+
+        if not (5 <= len(self.players) <= 10):
+            return  # TODO: handle
+
         self.choose_mission_leader()
         self.make_roles()
 
-        spy_message = {
+        base_message = {
             "kind": "game_start",
-            "is_spy": True,
-            "spies": list(self.spies),
             "players": self.players,
+            "num_players": len(self.players),
+            "num_spies": len(self.spies),
+            "agents_per_round": NUM_AGENTS_DICT[len(self.players)],
         }
-        resistance_message = {
-            "kind": "game_start",
-            "is_spy": False,
-            "players": self.players,
-        }
+        spy_message = dict(is_spy=True, spies=self.spies, **base_message,)
+        resistance_message = dict(is_spy=False, **base_message)
         for connection, player_id in self.connections:
             if player_id in self.spies:
                 await connection.put(spy_message)
@@ -76,7 +86,7 @@ class Game:
             {
                 "kind": "round_start",
                 "mission_size": self.mission_size(),
-                "mission_number": self.round_num + 1,
+                "mission_number": self.round_num,
             }
         )
         await self.start_nomination()
@@ -85,7 +95,11 @@ class Game:
         mission_leader = self.players[self.mission_leader]
         self.state = GameStates.NOMINATING
         await self.broadcast(
-            {"kind": "nomination_start", "mission_leader": mission_leader,}
+            {
+                "kind": "nomination_start",
+                "mission_leader": mission_leader,
+                "vote_track": self.nominations_rejected,
+            }
         )
 
     async def nominating(self, player_id, move):
@@ -121,6 +135,7 @@ class Game:
                 "kind": "nomination_vote_results",
                 "results": self.nom_votes,
                 "approved": approved,
+                "vote_track": self.nominations_rejected,
             }
         )
         if approved:
@@ -130,11 +145,7 @@ class Game:
             self.nominations_rejected += 1
             if self.nominations_rejected == 5:
                 await self.broadcast(
-                    {
-                        "kind": "game_over",
-                        "resistance_won": False,
-                        "spies": list(self.spies),
-                    }
+                    {"kind": "game_over", "resistance_won": False, "spies": self.spies,}
                 )
             else:
                 await self.start_nomination()
@@ -155,7 +166,7 @@ class Game:
         await self.broadcast(
             {
                 "kind": "mission_result",
-                "mission_number": self.round_num + 1,
+                "mission_number": self.round_num,
                 "mission_succeeded": mission_succeeded,
                 "num_fails": num_fails,
             }
@@ -178,34 +189,25 @@ class Game:
     def make_roles(self):
         """Assign roles to players."""
         num_roles = len(self.players)
-    
+
         if num_roles == 5 or 6:
             num_spies = 2
         elif num_roles == 7 or 8:
             num_spies = 3
         else:
             num_spies = 4
-        
-        self.spies = choices(self.players, k=num_spies)
+
+        self.spies = sample(self.players, k=num_spies)
 
     def choose_mission_leader(self):
         """Randomly select a player to be the first mission leader."""
         num_players = len(self.players)
-        self.mission_leader = randint(0, num_players-1)
-        
+        self.mission_leader = randint(0, num_players - 1)
 
     def mission_size(self):
         """Determine the number of people on the current mission."""
         num_players = len(self.players)
-       
-        num_agents_dict = {5:[2,3,2,3,3], 
-                           6:[2,3,4,3,4], 
-                           7:[2,3,3,4,4], 
-                           8:[3,4,4,5,5], 
-                           9:[3,4,4,5,5], 
-                           10:[3,4,4,5,5]}
-        
-        return num_agents_dict[num_players][self.round_num]
+        return NUM_AGENTS_DICT[num_players][self.round_num]
 
     def validate_mission(self, mission):
         """
@@ -264,9 +266,12 @@ class Game:
         # TODO (Elizabeth): Use self.successes to determine if the resistance won or not.
         return True
 
-#5 or 6 players = 2 spies
-#7-9 players = 3 spies 
-#10 = 4 spies 
-        
-#git commit -m "first three functions and fixed first item of test file"
-#git push
+
+NUM_AGENTS_DICT = {
+    5: [2, 3, 2, 3, 3],
+    6: [2, 3, 4, 3, 4],
+    7: [2, 3, 3, 4, 4],
+    8: [3, 4, 4, 5, 5],
+    9: [3, 4, 4, 5, 5],
+    10: [3, 4, 4, 5, 5],
+}
