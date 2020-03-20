@@ -3,6 +3,8 @@ from datetime import datetime, timedelta
 from os.path import dirname, join
 from secrets import token_hex
 
+from crypt import gen_salt, hash_password
+
 
 class CursorManager:
     """Class to manage acquiring a cursor and committing afterward."""
@@ -148,3 +150,41 @@ class Cookies(Storage):
         if cookie is None:
             return None
         return self._get_row("cookie", cookie, "user")[0]
+
+
+class Users(Storage):
+    TABLE_NAME = "users"
+    TABLE_SCHEMA = "username_lower TEXT PRIMARY KEY, username TEXT, passwd_hash TEXT NOT NULL, salt TEXT NOT NULL"
+
+    def register(self, username, password):
+        """Check if a user can be registered, and if so, register them."""
+        with self.cursor as cursor:
+            if (
+                cursor.execute(
+                    "SELECT * FROM {} WHERE username_lower=?".format(self.TABLE_NAME),
+                    (username.lower(),),
+                ).fetchone()
+                is not None
+            ):
+                return "That username is taken."
+            salt = gen_salt()
+            passwd_hash = hash_password(password, salt)
+            cursor.execute(
+                "INSERT INTO {} VALUES (?, ?, ?, ?)".format(self.TABLE_NAME),
+                (username.lower(), username, passwd_hash, salt),
+            )
+
+    def authenticate(self, username, password):
+        """Check a user's credentials, returning their true username if valid."""
+        with self.cursor as cursor:
+            user_row = cursor.execute(
+                "SELECT username, passwd_hash, salt FROM {} WHERE username_lower=?".format(
+                    self.TABLE_NAME
+                ),
+                (username.lower(),),
+            ).fetchone()
+            if user_row is None:
+                return
+            true_username, passwd_hash, salt = user_row
+            if passwd_hash == hash_password(password, salt):
+                return true_username

@@ -71,7 +71,7 @@ class Game:
             "num_spies": len(self.spies),
             "agents_per_round": NUM_AGENTS_DICT[len(self.players)],
         }
-        spy_message = dict(is_spy=True, spies=self.spies, **base_message, )
+        spy_message = dict(is_spy=True, spies=self.spies, **base_message,)
         resistance_message = dict(is_spy=False, **base_message)
         for connection, player_id in self.connections:
             if player_id in self.spies:
@@ -104,8 +104,8 @@ class Game:
 
     async def nominating(self, player_id, move):
         if (
-                move.get("kind") == "nominate"
-                and player_id == self.players[self.mission_leader]
+            move.get("kind") == "nominate"
+            and player_id == self.players[self.mission_leader]
         ):
             nominated_mission = move.get("nomination")
             if self.validate_mission(nominated_mission):
@@ -145,11 +145,7 @@ class Game:
             self.nominations_rejected += 1
             if self.nominations_rejected == 5:
                 await self.broadcast(
-                    {
-                        "kind": "game_over",
-                        "resistance_won": False,
-                        "spies": self.spies,
-                    }
+                    {"kind": "game_over", "resistance_won": False, "spies": self.spies,}
                 )
             else:
                 await self.start_nomination()

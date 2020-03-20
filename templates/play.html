@@ -34,6 +34,11 @@
     </style>
 </head>
 <body>
+<div style="text-align: right">
+    <a onclick="document.getElementById('logOutForm').submit()" href="" style="margin-top: 1rem; margin-right: 1rem;">
+        Log out</a>
+    <form action="{{ url_for('log_out') }}" method="post" id="logOutForm"></form>
+</div>
 <div id="gameField" class="container" style="margin-bottom: 10rem;">
     <div class="row" id="players"></div>
     <div id="alignment" class="row"></div>

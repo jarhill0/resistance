@@ -2,20 +2,19 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Log in</title>
+    <title>Sign Up</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
           integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 </head>
 <body>
 <div style="text-align: center;">
-    <h1 style="margin-top: 5rem;">Log in</h1>
+    <h1 style="margin-top: 5rem;">Sign Up</h1>
 
-    Or <a href="{{ url_for('sign_up', dest=dest) }}">register a new account</a>.
-
+    Or <a href="{{ url_for('log_in', dest=dest) }}">log in</a>.
 </div>
 
-<form action="{{ url_for('authenticate', dest=dest) }}" method="post" class="container">
+<form action="{{ url_for('register') }}" method="post" class="container" onsubmit="return validate()">
     <div class="form-group"><label for="username">Username</label>
         <input class="form-control" id="username" type="text" required
                maxlength="20"
@@ -24,8 +23,21 @@
         <input class="form-control" id="password" required
                type="password" name="password">
     </div>
+    <div class="form-group"><label for="retype">Password (re-type)</label>
+        <input class="form-control" id="retype" required
+               type="password"></div>
     <button type="submit" class="btn btn-primary">Submit</button>
     <div id="errorText">{{ error }}</div>
 </form>
+<script>
+    function validate() {
+        const errorText = document.getElementById("errorText");
+        if (document.getElementById("password").value !== document.getElementById("retype").value) {
+            errorText.innerText = "The two passwords must match.";
+            return false;
+        }
+        return true;
+    }
+</script>
 </body>
 </html>
