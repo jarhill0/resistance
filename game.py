@@ -219,6 +219,7 @@ class Game:
           - have unique members who are all players of this game
         """
         # TODO (Elizabeth): write this function
+        if type(mission) == list and len(mission) == mission_size(???) 
         return True
 
     def update_mission_leader(self):
@@ -230,8 +231,11 @@ class Game:
     def mission_approved(self, num_approve):
         """Check if a mission is approved."""
         num_players = len(self.players)
-        # TODO (Elizabeth): Return True or False based on whether this mission has been approved
-        return True
+        if num_approve >= num_players/2
+        # done? (Elizabeth): Return True or False based on whether this mission has been approved
+            return True
+        else:
+            return False
 
     def mission_succeeds(self, num_fails):
         """Check if a mission succeeds."""
@@ -240,15 +244,20 @@ class Game:
     def max_fails(self):
         """Get the maximum allowed number of fails for the current round."""
         num_players = len(self.players)
-        # TODO (Elizabeth): Use self.round_num and num_players to determine the maximum number of fails allowed.
-        # TODO -----------: This number is usually 0, except in large games in the fourth round.
-        return 1
+        if num_players >= 7 and self.round_num ==3
+        # done? (Elizabeth): Use self.round_num and num_players to determine the maximum number of fails allowed.
+        # done? -----------: This number is usually 0, except in large games in the fourth round.
+            return 1
+        else:
+            return 0
 
     def game_over(self):
         """Check if the game is over."""
         if self.round_num == 4:
             return True
+        elif self.round_num >= 2 and 
         else:
+            
             # TODO (Elizabeth): Use self.round_num and self.successes to determine if the game is over.
             return False
 
