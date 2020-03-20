@@ -230,7 +230,7 @@ class Game:
         """Update who the mission leader is."""
         num_players = len(self.players)
         if self.mission_leader == num_players - 1:
-            self_mission_leader = 0
+            self.mission_leader = 0
         else:
             self.mission_leader += 1
 
