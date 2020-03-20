@@ -213,6 +213,12 @@
         const currentStatus = document.getElementById('currentStatus');
         currentStatus.textContent = '';
 
+        Array.from(document.getElementsByClassName("gunToken")).forEach(elem => elem.style.display = "none");
+        update.mission.forEach(agent => {
+            const nameplate = document.getElementById(nameplate_id(agent));
+            nameplate.getElementsByClassName("gunToken")[0].style.display = "block";
+        });
+
         currentStatus.appendChild(document.createTextNode(`${update.mission_leader} has nominated the following mission:`));
         const mission = document.createElement("ol");
         update.mission.forEach(agent => {
@@ -247,11 +253,6 @@
     }
 
     function mission_start(update) {
-        update.mission.forEach(agent => {
-            const nameplate = document.getElementById(nameplate_id(agent));
-            nameplate.getElementsByClassName("gunToken")[0].style.display = "block";
-        });
-
         const currentStatus = document.getElementById('currentStatus');
         currentStatus.textContent = '';
         if (update.mission.indexOf(user) >= 0) {
@@ -282,6 +283,7 @@
     function mission_result(update) {
         document.getElementById(mission_id(update.mission_number)).classList.remove("active");
         document.getElementById(mission_id(update.mission_number)).classList.add(update.mission_succeeded ? "passed" : "failed");
+        {# TODO: mark the number of fails! #}
 
         Array.from(document.getElementsByClassName("gunToken")).forEach(gunToken =>
             gunToken.style.display = "none");
