@@ -219,19 +219,17 @@ class Game:
           - have unique members who are all players of this game
         """
 
-        if type(mission) is not list or len(mission) != self.mission_size(): 
+        if type(mission) is not list or len(mission) != self.mission_size():
             return False
         for i in mission:
             if i not in self.players:
                 return False
         return len(set(mission)) == len(mission)
-        
-    
 
     def update_mission_leader(self):
         """Update who the mission leader is."""
         num_players = len(self.players)
-        if self.mission_leader == num_players-1:
+        if self.mission_leader == num_players - 1:
             self_mission_leader = 0
         else:
             self.mission_leader += 1
@@ -239,8 +237,7 @@ class Game:
     def mission_approved(self, num_approve):
         """Check if a mission is approved."""
         num_players = len(self.players)
-        return num_approve > num_players/2
-            
+        return num_approve > num_players / 2
 
     def mission_succeeds(self, num_fails):
         """Check if a mission succeeds."""
@@ -250,25 +247,23 @@ class Game:
         """Get the maximum allowed number of fails for the current round."""
         num_players = len(self.players)
         if num_players >= 7 and self.round_num == 3:
-        # done? (Elizabeth): Use self.round_num and num_players to determine the maximum number of fails allowed.
-        # done? -----------: This number is usually 0, except in large games in the fourth round.
+            # done? (Elizabeth): Use self.round_num and num_players to determine the maximum number of fails allowed.
+            # done? -----------: This number is usually 0, except in large games in the fourth round.
             return 1
         else:
             return 0
 
     def game_over(self):
         """Check if the game is over."""
-        fails = self.round_num - self.successes +1
+        fails = self.round_num - self.successes + 1
         if self.round_num == 4:
             return True
         return self.successes == 3 or fails == 3
-                 
 
     def resistance_won(self):
         """Check if the resistance won. Assume the game is over."""
         # TODO (Elizabeth): Use self.successes to determine if the resistance won or not.
         return self.successes == 3
-    
 
 
 NUM_AGENTS_DICT = {
