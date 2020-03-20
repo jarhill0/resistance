@@ -191,14 +191,13 @@ class Game:
     def choose_mission_leader(self):
         """Randomly select a player to be the first mission leader."""
         num_players = len(self.players)
-        # TODO (Elizabeth): choose a random number >= 0 and < num_players
         self.mission_leader = randint(0, num_players-1)
         
 
     def mission_size(self):
         """Determine the number of people on the current mission."""
         num_players = len(self.players)
-        # TODO (Elizabeth): Use num_players and self.round_num (where rounds are numbered 0-4, not 1-5)
+       
         num_agents_dict = {5:[2,3,2,3,3], 
                            6:[2,3,4,3,4], 
                            7:[2,3,3,4,4], 
@@ -206,8 +205,6 @@ class Game:
                            9:[3,4,4,5,5], 
                            10:[3,4,4,5,5]}
         
-        
-        # TODO ------------ to figure out how many players are going on this mission and return it
         return num_agents_dict[num_players][self.round_num]
 
     def validate_mission(self, mission):
@@ -220,6 +217,7 @@ class Game:
           - have unique members who are all players of this game
         """
         # TODO (Elizabeth): write this function
+        if type(mission) == list and len(mission) == mission_size(???) 
         return True
 
     def update_mission_leader(self):
@@ -231,8 +229,11 @@ class Game:
     def mission_approved(self, num_approve):
         """Check if a mission is approved."""
         num_players = len(self.players)
-        # TODO (Elizabeth): Return True or False based on whether this mission has been approved
-        return True
+        if num_approve >= num_players/2
+        # done? (Elizabeth): Return True or False based on whether this mission has been approved
+            return True
+        else:
+            return False
 
     def mission_succeeds(self, num_fails):
         """Check if a mission succeeds."""
@@ -241,15 +242,20 @@ class Game:
     def max_fails(self):
         """Get the maximum allowed number of fails for the current round."""
         num_players = len(self.players)
-        # TODO (Elizabeth): Use self.round_num and num_players to determine the maximum number of fails allowed.
-        # TODO -----------: This number is usually 0, except in large games in the fourth round.
-        return 1
+        if num_players >= 7 and self.round_num ==3
+        # done? (Elizabeth): Use self.round_num and num_players to determine the maximum number of fails allowed.
+        # done? -----------: This number is usually 0, except in large games in the fourth round.
+            return 1
+        else:
+            return 0
 
     def game_over(self):
         """Check if the game is over."""
         if self.round_num == 4:
             return True
+        elif self.round_num >= 2 and 
         else:
+            
             # TODO (Elizabeth): Use self.round_num and self.successes to determine if the game is over.
             return False
 
@@ -261,3 +267,6 @@ class Game:
 #5 or 6 players = 2 spies
 #7-9 players = 3 spies 
 #10 = 4 spies 
+        
+#git commit -m "first three functions and fixed first item of test file"
+#git push
