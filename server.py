@@ -88,7 +88,9 @@ async def authenticate():
 async def log_out():
     if "auth" in request.cookies:
         COOKIES.remove(request.cookies["auth"])
-    return redirect("/")
+    response = redirect('/')
+    response.set_cookie('auth', '', expires=0)
+    return response
 
 
 def collect_websocket(func):
@@ -196,4 +198,4 @@ async def sign_up():
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0")
+    app.run()
