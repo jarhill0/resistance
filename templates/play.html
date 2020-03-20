@@ -147,11 +147,21 @@
 
         const alignment = document.getElementById("alignment");
         if (update.is_spy) {
-            alignment.appendChild(document.createTextNode(`You are a spy! The spies are ${list(update.spies)}.`));
+            alignment.appendChild(document.createTextNode("You are a\u00A0"));
+            const bold = document.createElement("b");
+            bold.innerText = "spy";
+            bold.style.color = "deeppink";
+            alignment.appendChild(bold);
+            alignment.appendChild(document.createTextNode(`! The spies are ${list(update.spies)}.`));
 
             update.spies.forEach(spy => document.getElementById(nameplate_id(spy)).style.background = "pink");
         } else {
-            alignment.appendChild(document.createTextNode("You are resistance."))
+            alignment.appendChild(document.createTextNode("You are\u00A0"));
+            const bold = document.createElement("b");
+            bold.innerText = "Resistance";
+            bold.style.color = "deepskyblue";
+            alignment.appendChild(bold);
+            alignment.appendChild(document.createTextNode("."));
         }
     }
 
