@@ -218,33 +218,38 @@ class Game:
           - have the length appropriate for the current mission size
           - have unique members who are all players of this game
         """
-        # TODO (Elizabeth): write this function
-        if type(mission) == list and len(mission) == mission_size(???) 
-        return True
+
+        if type(mission) is not list or len(mission) != self.mission_size(): 
+            return False
+        for i in mission:
+            if i not in self.players:
+                return False
+        return len(set(mission)) == len(mission)
+        
+    
 
     def update_mission_leader(self):
         """Update who the mission leader is."""
         num_players = len(self.players)
-        # TODO (Elizabeth): Change self.mission_leader to be the next valid value (use %)
-        self.mission_leader += 1
+        if self.mission_leader == num_players-1:
+            self_mission_leader = 0
+        else:
+            self.mission_leader += 1
 
     def mission_approved(self, num_approve):
         """Check if a mission is approved."""
         num_players = len(self.players)
-        if num_approve >= num_players/2
-        # done? (Elizabeth): Return True or False based on whether this mission has been approved
-            return True
-        else:
-            return False
+        return num_approve > num_players/2
+            
 
     def mission_succeeds(self, num_fails):
         """Check if a mission succeeds."""
-        return num_fails < self.max_fails()
+        return num_fails <= self.max_fails()
 
     def max_fails(self):
         """Get the maximum allowed number of fails for the current round."""
         num_players = len(self.players)
-        if num_players >= 7 and self.round_num ==3
+        if num_players >= 7 and self.round_num == 3:
         # done? (Elizabeth): Use self.round_num and num_players to determine the maximum number of fails allowed.
         # done? -----------: This number is usually 0, except in large games in the fourth round.
             return 1
@@ -253,18 +258,17 @@ class Game:
 
     def game_over(self):
         """Check if the game is over."""
+        fails = self.round_num - self.successes +1
         if self.round_num == 4:
             return True
-        elif self.round_num >= 2 and 
-        else:
-            
-            # TODO (Elizabeth): Use self.round_num and self.successes to determine if the game is over.
-            return False
+        return self.successes == 3 or fails == 3
+                 
 
     def resistance_won(self):
         """Check if the resistance won. Assume the game is over."""
         # TODO (Elizabeth): Use self.successes to determine if the resistance won or not.
-        return True
+        return self.successes == 3
+    
 
 
 NUM_AGENTS_DICT = {

@@ -1,6 +1,6 @@
 from game import Game
 
-game = Game([], ("a", "b", "c", "d", "e", "f"))
+game = Game(("a", "b", "c", "d", "e", "f"))
 
 game.make_roles()
 assert len(game.spies) == 2
