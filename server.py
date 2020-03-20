@@ -12,7 +12,7 @@ from quart import (
     make_response,
 )
 
-from game import Game
+from game import Game, NUM_AGENTS_DICT
 from storage import Cookies
 
 COOKIES = Cookies()
@@ -21,7 +21,7 @@ app = Quart(__name__)
 app.connected_websockets = set()
 app.games = dict()
 
-app.games[42] = Game(app.connected_websockets, ("JOHN", "joseph", "Joshua"))
+app.games[42] = Game(app.connected_websockets)
 
 
 def authenticated(route):
@@ -39,6 +39,7 @@ def authenticated(route):
 @app.route("/log_in", methods=["GET"])
 async def log_in():
     dest = (await request.values).get("dest")
+    # TODO: This is (kinda) a security vulnerability -- malicious redirect.
     if "auth" in request.cookies and COOKIES.check(request.cookies["auth"]):
         return redirect(dest or url_for("play"))
 
@@ -88,7 +89,7 @@ async def ws(queue, game_id):
 
     player_id = COOKIES.user(websocket.cookies.get("auth"))
 
-    if not game.has_player(player_id):
+    if not game.can_join(player_id):
         return
 
     async def consumer():
@@ -123,4 +124,4 @@ async def play():
 
 
 if __name__ == "__main__":
-    app.run()
+    app.run(host="0.0.0.0")
