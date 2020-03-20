@@ -1,5 +1,5 @@
 from enum import Enum, auto
-from random import choices
+from random import sample
 from random import randint
 
 
@@ -201,7 +201,7 @@ class Game:
         else:
             num_spies = 4
 
-        self.spies = choices(self.players, k=num_spies)
+        self.spies = sample(self.players, k=num_spies)
 
     def choose_mission_leader(self):
         """Randomly select a player to be the first mission leader."""
