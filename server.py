@@ -151,7 +151,7 @@ async def play():
 @app.route("/sign_up", methods=["POST"])
 async def register():
     values = await request.values
-    dest = request.values.get("dest")
+    dest = values.get("dest")
     if not values.get("password") and values.get("username"):
         return redirect(url_for("sign_up"))
 
