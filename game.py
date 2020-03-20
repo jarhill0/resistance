@@ -1,6 +1,5 @@
 from enum import Enum, auto
-from random import sample
-from random import randint
+from random import randint, sample
 
 
 class GameStates(Enum):
@@ -42,7 +41,7 @@ class Game:
         if kind == "start":
             await self.start()
 
-    async def game_is_over(self):
+    async def game_is_over(self, player_id, move):
         pass
 
     async def broadcast(self, message):
