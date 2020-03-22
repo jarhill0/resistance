@@ -1,4 +1,5 @@
 import asyncio
+from collections import defaultdict
 from functools import wraps
 from json import dumps, loads
 from string import ascii_letters, digits
@@ -22,10 +23,16 @@ COOKIES = Cookies()
 USERS = Users()
 
 app = Quart(__name__)
-app.connected_websockets = set()
 app.games = dict()
+app.game_connections = defaultdict(set)
 
-app.games[42] = Game(app.connected_websockets)
+
+def make_game(game_id):
+    def destroy_game():
+        del app.games[game_id]
+        del app.game_connections[game_id]
+
+    app.games[game_id] = Game(app.game_connections[game_id], when_finished=destroy_game)
 
 
 def authenticated(route):
@@ -42,13 +49,18 @@ def authenticated(route):
 
 @app.route("/log_in", methods=["GET"])
 async def log_in():
-    dest = (await request.values).get("dest")
+    values = await request.values
+    dest = values.get("dest")
     # TODO: This is (kinda) a security vulnerability -- malicious redirect.
     if "auth" in request.cookies and COOKIES.check(request.cookies["auth"]):
-        return redirect(dest or url_for("play"))
+        return redirect(dest or '/')
+
+    error = ''
+    if values.get('acct_created'):
+        error = 'Thank you for creating an account! Please log in.'
 
     COOKIES.prune()
-    return await render_template("auth.html", dest=dest)
+    return await render_template("auth.html", dest=dest, error=error)
 
 
 @app.route("/log_in", methods=["POST"])
@@ -56,7 +68,7 @@ async def authenticate():
     values = await request.values
     dest = values.get("dest")
     if "auth" in request.cookies and COOKIES.check(request.cookies["auth"]):
-        return redirect(dest or url_for("play"))
+        return redirect(dest or '/')
 
     if not values.get("password") and values.get("username"):
         return redirect(url_for("log_in"))
@@ -71,7 +83,7 @@ async def authenticate():
 
     true_username = USERS.authenticate(values["username"], values["password"])
     if true_username is not None:
-        resp = await make_response(redirect(values.get("dest") or url_for("play")))
+        resp = await make_response(redirect(values.get("dest") or '/'))
         resp.set_cookie(
             "auth",
             value=COOKIES.new(true_username),
@@ -88,21 +100,21 @@ async def authenticate():
 async def log_out():
     if "auth" in request.cookies:
         COOKIES.remove(request.cookies["auth"])
-    response = redirect('/')
-    response.set_cookie('auth', '', expires=0)
+    response = redirect("/")
+    response.set_cookie("auth", "", expires=0)
     return response
 
 
 def collect_websocket(func):
     @wraps(func)
-    async def wrapper(*args, **kwargs):
+    async def wrapper(game_id, *args, **kwargs):
         queue = asyncio.Queue()
         username = COOKIES.user(websocket.cookies.get("auth"))
-        app.connected_websockets.add((queue, username))
+        app.game_connections[game_id].add((queue, username))
         try:
-            return await func(queue, *args, **kwargs)
+            return await func(queue, game_id, *args, **kwargs)
         finally:
-            app.connected_websockets.remove((queue, username))
+            app.game_connections[game_id].remove((queue, username))
 
     return wrapper
 
@@ -142,12 +154,28 @@ async def ws(queue, game_id):
         producer_task.cancel()
 
 
-@app.route("/")
+@app.route("/play/<int:game_id>/")
 @authenticated
-async def play():
-    auth = request.cookies["auth"]
-    user = COOKIES.user(auth)
-    return await render_template("play.html", user=user)
+async def play(game_id):
+    if game_id not in app.games:
+        app.games[game_id] = Game(app.game_connections[game_id])
+
+    return await render_template("play.html", user=get_user(request), game_id=game_id)
+
+
+def get_user(req):
+    auth = req.cookies.get("auth")
+    if auth is not None:
+        return COOKIES.user(auth)
+
+
+@app.route("/play/", methods=["GET"])
+async def go_to_game():
+    values = await request.values
+    game_id = values.get("game_id")
+    if game_id is None:
+        return redirect(url_for("index"))
+    return redirect(url_for("play", game_id=game_id))
 
 
 @app.route("/sign_up", methods=["POST"])
@@ -183,7 +211,7 @@ async def register():
 
     error = USERS.register(values["username"], values["password"])
     if error is None:
-        return redirect(url_for("log_in"))
+        return redirect(url_for("log_in", acct_created=True))
     else:
         return await render_template("register.html", error=error)
 
@@ -193,8 +221,13 @@ async def sign_up():
     values = await request.values
     dest = values.get("dest")
     if "auth" in request.cookies and COOKIES.check(request.cookies["auth"]):
-        return redirect(dest or url_for("play"))
+        return redirect(dest or '/')
     return await render_template("register.html")
+
+
+@app.route("/", methods=["GET"])
+async def index():
+    return await render_template("index.html", user=get_user(request))
 
 
 if __name__ == "__main__":

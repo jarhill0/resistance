@@ -11,9 +11,10 @@ class GameStates(Enum):
 
 
 class Game:
-    def __init__(self, connections):
+    def __init__(self, connections, when_finished=None):
         self.connections = connections  # mutable reference outside of this scope.
         self.players = ()  # should be immutable or owned by this class
+        self.when_finished = when_finished
         self.state = GameStates.NOT_STARTED
         self.spies = None
         self.mission_leader = None
@@ -143,9 +144,7 @@ class Game:
         else:
             self.nominations_rejected += 1
             if self.nominations_rejected == 5:
-                await self.broadcast(
-                    {"kind": "game_over", "resistance_won": False, "spies": self.spies,}
-                )
+                await self.end_game()
             else:
                 await self.start_nomination()
 
@@ -173,17 +172,22 @@ class Game:
         if mission_succeeded:
             self.successes += 1
         if self.game_over():
-            await self.broadcast(
-                {
-                    "kind": "game_over",
-                    "resistance_won": self.resistance_won(),
-                    "spies": list(self.spies),
-                }
-            )
-            self.state = GameStates.GAME_OVER
+            await self.end_game()
         else:
             self.round_num += 1
             await self.start_round()
+
+    async def end_game(self):
+        self.state = GameStates.GAME_OVER
+        await self.broadcast(
+            {
+                "kind": "game_over",
+                "resistance_won": self.resistance_won(),
+                "spies": list(self.spies),
+            }
+        )
+        if self.when_finished is not None:
+            self.when_finished()
 
     def make_roles(self):
         """Assign roles to players."""
@@ -246,8 +250,6 @@ class Game:
         """Get the maximum allowed number of fails for the current round."""
         num_players = len(self.players)
         if num_players >= 7 and self.round_num == 3:
-            # done? (Elizabeth): Use self.round_num and num_players to determine the maximum number of fails allowed.
-            # done? -----------: This number is usually 0, except in large games in the fourth round.
             return 1
         else:
             return 0
@@ -261,7 +263,6 @@ class Game:
 
     def resistance_won(self):
         """Check if the resistance won. Assume the game is over."""
-        # TODO (Elizabeth): Use self.successes to determine if the resistance won or not.
         return self.successes == 3
 
 

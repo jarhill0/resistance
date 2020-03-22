@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Play!</title>
+    <title>Play The Resistance!</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
           integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
@@ -34,12 +34,7 @@
     </style>
 </head>
 <body>
-<div style="text-align: right">
-    <a onclick="document.getElementById('logOutForm').submit()" href="javascript:"
-       style="margin-top: 1rem; margin-right: 1rem;">
-        Log out</a>
-    <form action="{{ url_for('log_out') }}" method="post" id="logOutForm"></form>
-</div>
+{% include "header.html" %}
 <div id="gameField" class="container" style="margin-bottom: 10rem;">
     <div class="row" id="players"></div>
     <div id="alignment" class="row"></div>
@@ -103,7 +98,7 @@
     let players = [];
     let missionSize = -1;
 
-    const socket = new WebSocket('{{url_for("ws", game_id=42) }}');
+    const socket = new WebSocket('{{url_for("ws", game_id=game_id) }}');
 
     const HANDLERS = {
         "game_start": game_start,
@@ -318,6 +313,10 @@
             const name = namePlate.getElementsByTagName("span")[0].innerText.trim();
             namePlate.style.background = update.spies.indexOf(name) >= 0 ? "pink" : "skyblue";
         });
+
+        socket.onclose = () => {
+        };
+        socket.close();
     }
 
     function start_game() {
