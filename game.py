@@ -150,7 +150,6 @@ class Game:
                 await self.process_votes()
 
     async def process_votes(self):
-        # TODO what if we're processing votes and another comes in? Somehow we need to lock.
         approved = self.mission_approved(sum(self.nom_votes.values()))
         await self.broadcast(
             {
