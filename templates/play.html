@@ -109,6 +109,7 @@
         "mission_result": mission_result,
         "game_over": game_over,
         "nomination_start": nomination_start,
+        "lobby_update": lobby_update,
     };
 
     function game_start(update) {
@@ -129,22 +130,7 @@
 
         players = update.players;
 
-        const playersDiv = document.getElementById("players");
-        players.forEach(player => {
-            const col = document.createElement("div");
-            col.classList.add("col");
-            col.classList.add("namePlate");
-            col.id = nameplate_id(player);
-
-            const nameSpan = document.createElement("span");
-            nameSpan.innerText = player;
-            col.appendChild(nameSpan);
-
-            col.appendChild(token_image("/static/img/leader.png", ["leaderToken"]));
-            col.appendChild(token_image("/static/img/gun.png", ["gunToken"]));
-
-            playersDiv.appendChild(col);
-        });
+        set_players(update.players);
 
         const alignment = document.getElementById("alignment");
         if (update.is_spy) {
@@ -164,6 +150,30 @@
             alignment.appendChild(bold);
             alignment.appendChild(document.createTextNode("."));
         }
+    }
+
+    function lobby_update(update) {
+        set_players(update.players);
+    }
+
+    function set_players(plyrs) {
+        const playersDiv = document.getElementById("players");
+        playersDiv.textContent = '';
+        plyrs.forEach(player => {
+            const col = document.createElement("div");
+            col.classList.add("col");
+            col.classList.add("namePlate");
+            col.id = nameplate_id(player);
+
+            const nameSpan = document.createElement("span");
+            nameSpan.innerText = player;
+            col.appendChild(nameSpan);
+
+            col.appendChild(token_image("/static/img/leader.png", ["leaderToken"]));
+            col.appendChild(token_image("/static/img/gun.png", ["gunToken"]));
+
+            playersDiv.appendChild(col);
+        });
     }
 
     function round_start(update) {

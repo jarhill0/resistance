@@ -14,6 +14,7 @@ class Game:
     def __init__(self, connections, when_finished=None):
         self.connections = connections  # mutable reference outside of this scope.
         self.players = ()  # should be immutable or owned by this class
+        self.lobby = set()
         self.when_finished = when_finished
         self.state = GameStates.NOT_STARTED
         self.spies = None
@@ -60,6 +61,21 @@ class Game:
             return True
         else:
             return player_id in self.players
+
+    async def join(self, player_id):
+        if self.state == GameStates.NOT_STARTED:
+            self.lobby.add(player_id)
+            await self.broadcast({"kind": "lobby_update", "players": list(self.lobby)})
+
+    async def discard(self, player_id):
+        # since we allow duplicate connections, we can't go off of player_id alone.
+        if self.state == GameStates.NOT_STARTED:
+            lobby = set(name for _, name in self.connections)
+            if lobby != self.lobby:
+                self.lobby = lobby
+                await self.broadcast(
+                    {"kind": "lobby_update", "players": list(self.lobby)}
+                )
 
     async def start(self):
         self.players = tuple(set(name for _, name in self.connections))

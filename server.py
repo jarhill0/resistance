@@ -125,6 +125,7 @@ def collect_websocket(func):
             return await func(queue, game_id, *args, **kwargs)
         finally:
             app.game_connections[game_id].discard((queue, username))
+            await app.games[game_id].discard(username)
 
     return wrapper
 
@@ -140,6 +141,7 @@ async def ws(queue, game_id):
 
     if not game.can_join(player_id):
         return
+    await game.join(player_id)
 
     async def consumer():
         while True:
