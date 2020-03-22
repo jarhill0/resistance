@@ -3,6 +3,7 @@ from collections import defaultdict
 from functools import wraps
 from json import dumps, loads
 from string import ascii_letters, digits
+from urllib.parse import urlparse, urlunparse
 
 from quart import (
     Quart,
@@ -35,6 +36,11 @@ def make_game(game_id):
     app.games[game_id] = Game(app.game_connections[game_id], when_finished=destroy_game)
 
 
+def relative_path(url):
+    parsed = ("", "") + urlparse(url)[2:]  # blank out scheme and host
+    return urlunparse(parsed)
+
+
 def authenticated(route):
     """Wrap a function that needs to be authenticated."""
 
@@ -42,7 +48,12 @@ def authenticated(route):
     async def auth_wrapper(*args, **kwargs):
         if "auth" in request.cookies and COOKIES.check(request.cookies["auth"]):
             return await route(*args, **kwargs)
-        return redirect(url_for("log_in", dest=request.url))
+        return redirect(
+            url_for(
+                "log_in",
+                dest=relative_path(request.url),  # relative path for prettiness
+            )
+        )
 
     return auth_wrapper
 
@@ -50,8 +61,7 @@ def authenticated(route):
 @app.route("/log_in", methods=["GET"])
 async def log_in():
     values = await request.values
-    dest = values.get("dest")
-    # TODO: This is (kinda) a security vulnerability -- malicious redirect.
+    dest = relative_path(values.get("dest"))  # relative_path for security
     if "auth" in request.cookies and COOKIES.check(request.cookies["auth"]):
         return redirect(dest or "/")
 
@@ -66,9 +76,9 @@ async def log_in():
 @app.route("/log_in", methods=["POST"])
 async def authenticate():
     values = await request.values
-    dest = values.get("dest")
+    dest = relative_path(values.get("dest"))  # relative_path for security
     if "auth" in request.cookies and COOKIES.check(request.cookies["auth"]):
-        return redirect(dest or "/")
+        return redirect(relative_path(dest) or "/")
 
     if not values.get("password") and values.get("username"):
         return redirect(url_for("log_in"))
@@ -83,7 +93,7 @@ async def authenticate():
 
     true_username = USERS.authenticate(values["username"], values["password"])
     if true_username is not None:
-        resp = await make_response(redirect(values.get("dest") or "/"))
+        resp = await make_response(redirect(dest or "/"))
         resp.set_cookie(
             "auth",
             value=COOKIES.new(true_username),
@@ -219,7 +229,7 @@ async def register():
 @app.route("/sign_up", methods=["GET"])
 async def sign_up():
     values = await request.values
-    dest = values.get("dest")
+    dest = relative_path(values.get("dest"))  # relative_path for security
     if "auth" in request.cookies and COOKIES.check(request.cookies["auth"]):
         return redirect(dest or "/")
     return await render_template("register.html")
