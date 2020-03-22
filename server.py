@@ -30,7 +30,7 @@ app.game_connections = defaultdict(set)
 def make_game(game_id):
     def destroy_game():
         del app.games[game_id]
-        del app.game_connections[game_id]
+        app.game_connections[game_id].clear()
 
     app.games[game_id] = Game(app.game_connections[game_id], when_finished=destroy_game)
 
@@ -114,7 +114,7 @@ def collect_websocket(func):
         try:
             return await func(queue, game_id, *args, **kwargs)
         finally:
-            app.game_connections[game_id].remove((queue, username))
+            app.game_connections[game_id].discard((queue, username))
 
     return wrapper
 
@@ -158,7 +158,7 @@ async def ws(queue, game_id):
 @authenticated
 async def play(game_id):
     if game_id not in app.games:
-        app.games[game_id] = Game(app.game_connections[game_id])
+        make_game(game_id)
 
     return await render_template("play.html", user=get_user(request), game_id=game_id)
 
