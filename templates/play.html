@@ -290,7 +290,11 @@
     function mission_result(update) {
         document.getElementById(mission_id(update.mission_number)).classList.remove("active");
         document.getElementById(mission_id(update.mission_number)).classList.add(update.mission_succeeded ? "passed" : "failed");
-        {# TODO: mark the number of fails! #}
+
+        if (!update.mission_succeeded) {
+            document.getElementById(results_id(update.mission_number)).innerText =
+                `(${update.num_fails} fail${update.num_fails > 1 ? 's' : ''})`;
+        }
 
         clearTokens("gunToken");
     }
@@ -401,6 +405,10 @@
 
     function nameplate_id(player) {
         return `${player}-namePlate`;
+    }
+
+    function results_id(round) {
+        return `results${round}`;
     }
 
     socket.onmessage = function (event) {
