@@ -89,7 +89,10 @@
     </div>
     <div class="row align-items-end" style="min-height: 5rem;">
         <div id="currentStatus" class="col" style="text-align: left;">Waiting for game to start…
+            <br>
             <button onclick="start_game()" id="startGameButton">Start Game</button>
+            <br>
+            <span id="startError"></span>
         </div>
     </div>
 </div>
@@ -97,6 +100,8 @@
     const user = "{{ user }}";
     let players = [];
     let missionSize = -1;
+
+    let lobbySize = -1;
 
     const socket = new WebSocket('{{url_for("ws", game_id=game_id) }}');
 
@@ -113,9 +118,6 @@
     };
 
     function game_start(update) {
-        const startButton = document.getElementById("startGameButton");
-        startButton.parentElement.removeChild(startButton);
-
         document.getElementById("num_players").innerText = update.num_players;
         document.getElementById("num_spies").innerText = update.num_spies;
         document.getElementById("player_makeup").style.display = "block";
@@ -154,6 +156,10 @@
 
     function lobby_update(update) {
         set_players(update.players);
+        lobbySize = update.players.length;
+
+        const startButton = document.getElementById('startGameButton');
+        startButton.disabled = lobbySize < 5 || lobbySize > 10;
     }
 
     function set_players(plyrs) {
@@ -329,7 +335,11 @@
     }
 
     function start_game() {
-        send({"kind": "start"});
+        if (lobbySize > 10 || lobbySize < 5) {
+            document.getElementById("startError").innerText = `Cannot start with ${lobbySize} players: need 5–10 players.`;
+        } else {
+            send({"kind": "start"});
+        }
     }
 
     function token_image(src, class_list = []) {

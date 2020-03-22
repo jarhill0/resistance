@@ -81,7 +81,7 @@ class Game:
         self.players = tuple(set(name for _, name in self.connections))
 
         if not (5 <= len(self.players) <= 10):
-            return  # TODO: handle
+            return  # client made a bad request
 
         self.choose_mission_leader()
         self.make_roles()
