@@ -53,11 +53,11 @@ async def log_in():
     dest = values.get("dest")
     # TODO: This is (kinda) a security vulnerability -- malicious redirect.
     if "auth" in request.cookies and COOKIES.check(request.cookies["auth"]):
-        return redirect(dest or '/')
+        return redirect(dest or "/")
 
-    error = ''
-    if values.get('acct_created'):
-        error = 'Thank you for creating an account! Please log in.'
+    error = ""
+    if values.get("acct_created"):
+        error = "Thank you for creating an account! Please log in."
 
     COOKIES.prune()
     return await render_template("auth.html", dest=dest, error=error)
@@ -68,7 +68,7 @@ async def authenticate():
     values = await request.values
     dest = values.get("dest")
     if "auth" in request.cookies and COOKIES.check(request.cookies["auth"]):
-        return redirect(dest or '/')
+        return redirect(dest or "/")
 
     if not values.get("password") and values.get("username"):
         return redirect(url_for("log_in"))
@@ -83,7 +83,7 @@ async def authenticate():
 
     true_username = USERS.authenticate(values["username"], values["password"])
     if true_username is not None:
-        resp = await make_response(redirect(values.get("dest") or '/'))
+        resp = await make_response(redirect(values.get("dest") or "/"))
         resp.set_cookie(
             "auth",
             value=COOKIES.new(true_username),
@@ -138,7 +138,7 @@ async def ws(queue, game_id):
                 move = loads(data)
             except ValueError:
                 continue
-            await game.player_move(player_id, move)
+            await game.player_move(player_id, move, queue)
 
     async def producer():
         while True:
@@ -221,7 +221,7 @@ async def sign_up():
     values = await request.values
     dest = values.get("dest")
     if "auth" in request.cookies and COOKIES.check(request.cookies["auth"]):
-        return redirect(dest or '/')
+        return redirect(dest or "/")
     return await render_template("register.html")
 
 

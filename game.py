@@ -24,6 +24,8 @@ class Game:
         self.nom_votes = dict()
         self.mission_votes = dict()
         self.nominations_rejected = 0
+        self.mission_results = []
+        self.last_state_change_message = dict()
 
         self.STATES = {
             GameStates.NOT_STARTED: self.not_started,
@@ -33,7 +35,11 @@ class Game:
             GameStates.GAME_OVER: self.game_is_over,
         }
 
-    async def player_move(self, player_id, move):
+    async def player_move(self, player_id, move, queue):
+        if type(move) is not dict:
+            return
+        if move.get("kind") == "catch_up":
+            return await self.catch_up(player_id, queue)
         handler = self.STATES[self.state]
         await handler(player_id, move)
 
@@ -94,13 +100,13 @@ class Game:
     async def start_nomination(self):
         mission_leader = self.players[self.mission_leader]
         self.state = GameStates.NOMINATING
-        await self.broadcast(
-            {
-                "kind": "nomination_start",
-                "mission_leader": mission_leader,
-                "vote_track": self.nominations_rejected,
-            }
-        )
+        message = {
+            "kind": "nomination_start",
+            "mission_leader": mission_leader,
+            "vote_track": self.nominations_rejected,
+        }
+        await self.broadcast(message)
+        self.last_state_change_message = message
 
     async def nominating(self, player_id, move):
         if (
@@ -113,13 +119,13 @@ class Game:
                 self.update_mission_leader()
                 self.nom_votes.clear()
                 self.mission = nominated_mission
-                await self.broadcast(
-                    {
-                        "kind": "mission_nominated",
-                        "mission": nominated_mission,
-                        "mission_leader": player_id,
-                    }
-                )
+                message = {
+                    "kind": "mission_nominated",
+                    "mission": nominated_mission,
+                    "mission_leader": player_id,
+                }
+                await self.broadcast(message)
+                self.last_state_change_message = message
 
     async def voting_mission(self, player_id, move):
         if move.get("kind") == "nomination_vote":
@@ -150,7 +156,15 @@ class Game:
 
     async def start_mission(self):
         self.mission_votes.clear()
-        await self.broadcast({"kind": "mission_start", "mission": self.mission})
+        message = {
+            "kind": "mission_start",
+            "mission": self.mission,
+            "mission_leader": self.players[
+                (self.mission_leader - 1) % len(self.players)
+            ],
+        }
+        await self.broadcast(message)
+        self.last_state_change_message = message
 
     async def running_mission(self, player_id, move):
         if move.get("kind") == "mission_vote" and player_id in self.mission:
@@ -161,14 +175,14 @@ class Game:
     async def process_mission(self):
         num_fails = sum(1 for vote in self.mission_votes.values() if not vote)
         mission_succeeded = self.mission_succeeds(num_fails)
-        await self.broadcast(
-            {
-                "kind": "mission_result",
-                "mission_number": self.round_num,
-                "mission_succeeded": mission_succeeded,
-                "num_fails": num_fails,
-            }
-        )
+        mission_result = {
+            "kind": "mission_result",
+            "mission_number": self.round_num,
+            "mission_succeeded": mission_succeeded,
+            "num_fails": num_fails,
+        }
+        self.mission_results.append(mission_result)
+        await self.broadcast(mission_result)
         if mission_succeeded:
             self.successes += 1
         if self.game_over():
@@ -188,6 +202,36 @@ class Game:
         )
         if self.when_finished is not None:
             self.when_finished()
+
+    async def catch_up(self, player_id, connection):
+        state = self.state
+        if state in (GameStates.NOT_STARTED, GameStates.GAME_OVER):
+            return
+
+        base_message = {
+            "kind": "game_start",
+            "players": self.players,
+            "num_players": len(self.players),
+            "num_spies": len(self.spies),
+            "agents_per_round": NUM_AGENTS_DICT[len(self.players)],
+        }
+        if player_id in self.spies:
+            await connection.put(dict(is_spy=True, spies=self.spies, **base_message,))
+        else:
+            await connection.put(dict(is_spy=False, **base_message))
+
+        for mission in self.mission_results:
+            await connection.put(mission)
+
+        await connection.put(
+            {
+                "kind": "round_start",
+                "mission_size": self.mission_size(),
+                "mission_number": self.round_num,
+            }
+        )
+
+        await connection.put(self.last_state_change_message)
 
     def make_roles(self):
         """Assign roles to players."""

@@ -174,15 +174,7 @@
     function nomination_start(update) {
         document.getElementById(votetrack_id(update.vote_track)).classList.add("currentVoteTrack");
 
-        {
-            const allLeaderTokens = document.getElementsByClassName("leaderToken");
-            for (let i = 0; i < allLeaderTokens.length; i++) {
-                allLeaderTokens[i].style.display = "none";
-            }
-
-            const leaderNameplate = document.getElementById(nameplate_id(update.mission_leader));
-            leaderNameplate.getElementsByClassName("leaderToken")[0].style.display = "block";
-        }
+        setTokens("leaderToken", [update.mission_leader]);
 
         const currentStatus = document.getElementById('currentStatus');
         currentStatus.textContent = '';
@@ -224,11 +216,8 @@
         const currentStatus = document.getElementById('currentStatus');
         currentStatus.textContent = '';
 
-        Array.from(document.getElementsByClassName("gunToken")).forEach(elem => elem.style.display = "none");
-        update.mission.forEach(agent => {
-            const nameplate = document.getElementById(nameplate_id(agent));
-            nameplate.getElementsByClassName("gunToken")[0].style.display = "block";
-        });
+        setTokens("gunToken", update.mission);
+        setTokens("leaderToken", [update.mission_leader]);
 
         currentStatus.appendChild(document.createTextNode(`${update.mission_leader} has nominated the following mission:`));
         const mission = document.createElement("ol");
@@ -261,9 +250,16 @@
 
     function nomination_vote_results(update) {
         document.getElementById(votetrack_id(update.vote_track)).classList.remove("currentVoteTrack");
+
+        if (!update.approved) {
+            clearTokens("gunToken");
+        }
     }
 
     function mission_start(update) {
+        setTokens("gunToken", update.mission);
+        setTokens("leaderToken", [update.mission_leader]);
+
         const currentStatus = document.getElementById('currentStatus');
         currentStatus.textContent = '';
         if (update.mission.indexOf(user) >= 0) {
@@ -296,8 +292,7 @@
         document.getElementById(mission_id(update.mission_number)).classList.add(update.mission_succeeded ? "passed" : "failed");
         {# TODO: mark the number of fails! #}
 
-        Array.from(document.getElementsByClassName("gunToken")).forEach(gunToken =>
-            gunToken.style.display = "none");
+        clearTokens("gunToken");
     }
 
     function game_over(update) {
@@ -330,6 +325,20 @@
         img.style.height = "40px";
         class_list.forEach(klass => img.classList.add(klass));
         return img;
+    }
+
+    function clearTokens(kind) {
+        Array.from(document.getElementsByClassName(kind)).forEach(token =>
+            token.style.display = "none");
+    }
+
+    function setTokens(kind, who) {
+        clearTokens(kind);
+
+        who.forEach(agent => {
+            const nameplate = document.getElementById(nameplate_id(agent));
+            nameplate.getElementsByClassName(kind)[0].style.display = "block";
+        });
     }
 
     function submit_nomination() {
@@ -397,12 +406,16 @@
     socket.onmessage = function (event) {
         const update = JSON.parse(event.data);
         const handler = HANDLERS[update.kind];
-        handler(update);
+        if (handler !== undefined) {
+            handler(update);
+        }
     };
 
     socket.onclose = function (event) {
         window.setTimeout(() => location.reload(), 1000);
     };
+
+    socket.onopen = () => send({'kind': 'catch_up'});
 </script>
 </body>
 </html>
