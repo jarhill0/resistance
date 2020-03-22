@@ -81,10 +81,10 @@ async def authenticate():
         return redirect(relative_path(dest) or "/")
 
     if not values.get("password") and values.get("username"):
-        return redirect(url_for("log_in"))
+        return redirect(url_for("log_in"), dest=dest)
 
     if not type(values["password"]) is str and type(values["username"]) is str:
-        return redirect(url_for("log_in"))
+        return redirect(url_for("log_in"), dest=dest)
 
     if len(values["password"]) > 1024:
         return await render_template(
@@ -193,10 +193,10 @@ async def register():
     values = await request.values
     dest = values.get("dest")
     if not values.get("password") and values.get("username"):
-        return redirect(url_for("sign_up"))
+        return redirect(url_for("sign_up", dest=dest))
 
     if not type(values["password"]) is str and type(values["username"]) is str:
-        return redirect(url_for("sign_up"))
+        return redirect(url_for("sign_up", dest=dest))
 
     if not all(c in VALID_USERNAME_CHARS for c in values["username"]):
         return await render_template(
@@ -221,9 +221,9 @@ async def register():
 
     error = USERS.register(values["username"], values["password"])
     if error is None:
-        return redirect(url_for("log_in", acct_created=True))
+        return redirect(url_for("log_in", acct_created=True, dest=dest))
     else:
-        return await render_template("register.html", error=error)
+        return await render_template("register.html", error=error, dest=dest)
 
 
 @app.route("/sign_up", methods=["GET"])
@@ -232,7 +232,7 @@ async def sign_up():
     dest = relative_path(values.get("dest"))  # relative_path for security
     if "auth" in request.cookies and COOKIES.check(request.cookies["auth"]):
         return redirect(dest or "/")
-    return await render_template("register.html")
+    return await render_template("register.html", dest=dest)
 
 
 @app.route("/", methods=["GET"])
