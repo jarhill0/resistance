@@ -112,7 +112,7 @@ async def authenticate():
 async def log_out():
     if "auth" in request.cookies:
         COOKIES.remove(request.cookies["auth"])
-    response = redirect("/")
+    response = redirect(url_for("log_in"))
     response.set_cookie("auth", "", expires=0)
     return response
 
@@ -174,6 +174,20 @@ async def upload_profile():
 def check_filetype(some_file, allowed_file_types):
     file_type = some_file.content_type
     return file_type is not None and file_type in allowed_file_types
+
+
+@app.route("/profile/me/change_password", methods=["POST"])
+@authenticated
+async def change_password():
+    user = get_user(request)
+    values = await request.values
+    old_password = values.get("old_password")
+    new_password = values.get("new_password")
+    if not (old_password and new_password):
+        return redirect(url_for("my_profile"))
+    if USERS.authenticate(user, old_password) is not None:
+        USERS.change_password(user, new_password)
+    return redirect(url_for("my_profile"))
 
 
 @app.websocket("/play/<int:game_id>/ws")

@@ -192,6 +192,21 @@ class Users(Storage):
             if passwd_hash == hash_password(password, salt):
                 return true_username
 
+    def change_password(self, username, new_password):
+        """Change a user's password."""
+        username = username.lower()
+        with self.cursor as cursor:
+            salt = cursor.execute(
+                f"SELECT salt FROM {self.TABLE_NAME} WHERE username_lower=?",
+                (username,),
+            ).fetchone()[0]
+            print(salt)
+            new_hash = hash_password(new_password, salt)
+            cursor.execute(
+                f"UPDATE {self.TABLE_NAME} SET passwd_hash=? WHERE username_lower=?",
+                (new_hash, username.lower()),
+            ).fetchone()
+
     def profile_pic(self, username):
         """Return a user's profile picture."""
         username = username.lower()
