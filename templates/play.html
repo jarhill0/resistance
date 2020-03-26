@@ -150,10 +150,14 @@
         </div>
     </div>
     <div class="row align-items-end" style="min-height: 5rem;">
-        <div id="currentStatus" class="col" style="text-align: left; background: rgba(255, 255, 255, 0.6);">
+        <div id="currentStatus" class="col"
+             style="text-align: left; background: rgba(255, 255, 255, 0.6); padding: 0.5rem; margin:0.5rem;">
             Waiting for game to start&hellip;
             <br>
-            <button onclick="start_game()" id="startGameButton" disabled>Start Game</button>
+            <button type="button" class="btn btn-outline-primary" onclick="start_game()" id="startGameButton" disabled>
+                Start
+                Game
+            </button>
             <br>
             <span id="startError"></span>
         </div>
@@ -300,6 +304,8 @@
 
             const submitNomButton = document.createElement("button");
             submitNomButton.onclick = submit_nomination;
+            submitNomButton.classList.add("btn");
+            submitNomButton.classList.add("btn-outline-primary");
             submitNomButton.innerText = "Nominate";
             currentStatus.appendChild(submitNomButton);
 
@@ -335,11 +341,15 @@
         const approveButton = document.createElement("button");
         approveButton.innerText = "Approve";
         approveButton.onclick = () => nomination_vote(true);
+        approveButton.classList.add("btn");
+        approveButton.classList.add("btn-info");
         currentStatus.appendChild(approveButton);
 
         const rejectButton = document.createElement("button");
         rejectButton.innerText = "Reject";
         rejectButton.onclick = () => nomination_vote(false);
+        rejectButton.classList.add("btn");
+        rejectButton.classList.add("btn-dark");
         currentStatus.appendChild(rejectButton);
 
         currentStatus.appendChild(document.createElement("br"));
@@ -424,11 +434,15 @@
             const pass = document.createElement("button");
             pass.innerText = "Pass";
             pass.onclick = () => mission_vote(true);
+            pass.classList.add("btn");
+            pass.classList.add("btn-info");
             currentStatus.appendChild(pass);
 
             const fail = document.createElement("button");
             fail.innerText = "Fail";
             fail.onclick = () => mission_vote(false);
+            fail.classList.add("btn");
+            fail.classList.add("btn-dark");
             currentStatus.appendChild(fail);
 
             currentStatus.appendChild(document.createElement("br"));
