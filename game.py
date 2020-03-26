@@ -157,6 +157,7 @@ class Game:
                 "results": self.nom_votes,
                 "approved": approved,
                 "vote_track": self.nominations_rejected,
+                "mission": self.mission,
             }
         )
         if approved:

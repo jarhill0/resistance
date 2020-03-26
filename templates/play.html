@@ -21,11 +21,6 @@
             --resistance-light: #fab987;
         }
 
-        body {
-            background-image: url({{ url_for('static', filename='img/background.svg') }});
-            background-size: cover;
-        }
-
         #board {
             border: solid;
             background: white;
@@ -47,6 +42,10 @@
             outline: solid goldenrod;
         }
 
+        .namePlate {
+            background: rgba(255, 255, 255, 0.6);
+        }
+
         ul {
             list-style: none;
         }
@@ -63,13 +62,44 @@
             width: 100px;
             margin: 5px auto;
         }
+
+        table {
+            border: 1px solid black;
+        }
+
+        td, th {
+            border-top: 1px solid #000 !important;
+            border-bottom: 1px solid #000 !important;
+            border-left: 1px solid #000;
+            border-right: 1px solid #000;
+            padding: 0.3rem;
+        }
     </style>
 </head>
 <body>
 {% include "header.html" %}
+<!-- Modal -->
+<div class="modal fade" id="gameModal" tabindex="-1" role="dialog" aria-labelledby="gameModalTitle"
+     aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="gameModalTitle"></h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body" id="gameModalBody">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-dismiss="modal">Ok</button>
+            </div>
+        </div>
+    </div>
+</div>
 <div id="gameField" class="container" style="margin-bottom: 10rem;">
     <div class="row" id="players"></div>
-    <div id="alignment" class="row"></div>
+    <div class="row"><p id="alignment"></p></div>
     <div class="row">
         <div class="col" id="board">
             <div class="row align-items-center" style="min-height: 25rem;">
@@ -120,9 +150,10 @@
         </div>
     </div>
     <div class="row align-items-end" style="min-height: 5rem;">
-        <div id="currentStatus" class="col" style="text-align: left;">Waiting for game to start…
+        <div id="currentStatus" class="col" style="text-align: left; background: rgba(255, 255, 255, 0.6);">
+            Waiting for game to start&hellip;
             <br>
-            <button onclick="start_game()" id="startGameButton">Start Game</button>
+            <button onclick="start_game()" id="startGameButton" disabled>Start Game</button>
             <br>
             <span id="startError"></span>
         </div>
@@ -184,6 +215,14 @@
             alignment.appendChild(bold);
             alignment.appendChild(document.createTextNode("."));
         }
+        const gameModal = $('#gameModal');
+        gameModal.on('hidden.bs.modal', function (e) {
+            // noop. overwritten in game_over
+        })
+
+        document.getElementById("gameModalTitle").innerText = "Game starting";
+        document.getElementById("gameModalBody").appendChild(alignment.cloneNode(true));
+        gameModal.modal()
     }
 
     function lobby_update(update) {
@@ -221,8 +260,8 @@
             nameSpan.innerText = player;
             col.appendChild(nameSpan);
 
-            col.appendChild(token_image("/static/img/leader.png", ["leaderToken"]));
-            col.appendChild(token_image("/static/img/gun.png", ["gunToken"]));
+            col.appendChild(token_image("{{ url_for('static', filename='img/leader.png') }}", ["leaderToken"]));
+            col.appendChild(token_image("{{ url_for('static', filename='img/gun.png') }}", ["gunToken"]));
 
             playersDiv.appendChild(col);
         });
@@ -316,6 +355,59 @@
         if (!update.approved) {
             clearTokens("gunToken");
         }
+
+        const results = document.createElement("p");
+        results.appendChild(document.createTextNode("The results are in! The mission nominated was"));
+
+        const lst = document.createElement("ol");
+        update.mission.forEach(agent => {
+            const li = document.createElement("li");
+            li.innerText = agent;
+            lst.appendChild(li);
+        });
+        results.appendChild(lst);
+
+        results.appendChild(document.createTextNode("and the votes were"));
+
+        const table = document.createElement("table");
+        {
+            const headerRow = document.createElement("tr");
+            const approved = document.createElement("th");
+            approved.innerText = "Approved";
+            const rejected = document.createElement("th");
+            rejected.innerText = "Rejected";
+            headerRow.appendChild(approved);
+            headerRow.appendChild(rejected);
+            table.appendChild(headerRow);
+        }
+        {
+            const row = document.createElement("tr");
+            const approved = document.createElement("td");
+            const rejected = document.createElement("td");
+
+            for (const [name, voted_yes] of Object.entries(update.results)) {
+                if (voted_yes) {
+                    approved.appendChild(document.createTextNode(name));
+                    approved.appendChild(document.createElement("br"))
+                } else {
+                    rejected.appendChild(document.createTextNode(name));
+                    rejected.appendChild(document.createElement("br"))
+                }
+            }
+            row.appendChild(approved);
+            row.appendChild(rejected);
+
+            table.appendChild(row);
+        }
+
+        results.appendChild(table);
+        results.appendChild(document.createTextNode(`The mission was ${update.approved ? "approved" : "rejected"}.`));
+
+        const gameModal = $('#gameModal');
+        document.getElementById("gameModalTitle").innerText = "Nomination vote results";
+        document.getElementById("gameModalBody").textContent = '';
+        document.getElementById("gameModalBody").appendChild(results);
+        gameModal.modal()
     }
 
     function mission_start(update) {
@@ -353,25 +445,47 @@
         document.getElementById(mission_id(update.mission_number)).classList.remove("active");
         document.getElementById(mission_id(update.mission_number)).classList.add(update.mission_succeeded ? "passed" : "failed");
 
-        if (!update.mission_succeeded) {
+        if (update.num_fails > 0) {
             document.getElementById(results_id(update.mission_number)).innerText =
                 `(${update.num_fails} fail${update.num_fails > 1 ? 's' : ''})`;
         }
 
         clearTokens("gunToken");
+
+        const results = document.createElement("p");
+        results.innerText = `The mission ${update.mission_succeeded ? "passed" : "failed"
+        }${update.num_fails > 0 ? ` with ${update.num_fails} fails` : ""}.`;
+
+        const gameModal = $('#gameModal');
+        document.getElementById("gameModalTitle").innerText = "Mission results";
+        document.getElementById("gameModalBody").textContent = '';
+        document.getElementById("gameModalBody").appendChild(results);
+        gameModal.modal()
     }
 
     function game_over(update) {
         {# TODO: suspense of revealing results — require group consent #}
         const currentStatus = document.getElementById("currentStatus");
 
-        currentStatus.innerText = update.resistance_won ?
-            "The Humans have succeeded!" : "The reptilians have defeated the Humans!";
-        currentStatus.innerText += ` The reptilians were ${list(update.spies)}.`;
+        const gameModal = $('#gameModal');
+        gameModal.on('hidden.bs.modal', function (e) {
+            currentStatus.innerText = update.resistance_won ?
+                "The Humans have succeeded!" : "The reptilians have defeated the Humans!";
+            currentStatus.innerText += ` The reptilians were ${list(update.spies)}.`;
 
-        Array.from(document.getElementsByClassName("namePlate")).forEach(namePlate => {
-            const name = namePlate.getElementsByTagName("span")[0].innerText.trim();
-            namePlate.style.background = update.spies.indexOf(name) >= 0 ? "var(--spies)" : "var(--resistance)";
+            Array.from(document.getElementsByClassName("namePlate")).forEach(namePlate => {
+                const name = namePlate.getElementsByTagName("span")[0].innerText.trim();
+                namePlate.style.background = update.spies.indexOf(name) >= 0 ? "var(--spies)" : "var(--resistance)";
+            });
+
+            gameModal.on('hidden.bs.modal', function (e) {
+                // no-op
+            });
+
+            document.getElementById("gameModalTitle").innerText = "Game over";
+            document.getElementById("gameModalBody").textContent = '';
+            document.getElementById("gameModalBody").appendChild(currentStatus.cloneNode(true));
+            gameModal.modal()
         });
 
         socket.onclose = () => {
@@ -489,6 +603,22 @@
     };
 
     socket.onopen = () => send({'kind': 'catch_up'});
+
+    // https://stackoverflow.com/a/506193/8033766
+    function loadBG() {
+        document.body.style.backgroundImage = "url({{ url_for('static', filename='img/background.svg') }})";
+        document.body.style.backgroundSize = "cover";
+    }
+
+    window.onload = loadBG;
 </script>
+
+<!-- required for the modal alerts -->
+<script src="https://code.jquery.com/jquery-3.4.1.slim.min.js"
+        integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n"
+        crossorigin="anonymous"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"
+        integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6"
+        crossorigin="anonymous"></script>
 </body>
 </html>
