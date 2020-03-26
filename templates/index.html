@@ -18,7 +18,7 @@
 <h2>…but online!</h2>
 <div class="container">
     <div class="row justify-content-center">
-        <form class="col-3-md" method="get" action="{{ url_for('go_to_game') }}" style="margin: 5rem;">
+        <form class="col-3-md" method="get" action="{{ url_for('go_to_game') }}" style="margin-top: 5rem; margin-bottom: 2rem;">
             <div class="form-group">
                 <label for="game_id">Game ID
                 </label>
@@ -27,6 +27,11 @@
             <button type="submit" class="btn btn-primary">Go</button>
 
         </form>
+    </div>
+    <div class="row justify-content-center">
+        <div class="col-3-md">
+            Please <a href="{{ url_for('my_profile') }}">set a profile picture</a> before your first game.
+        </div>
     </div>
 </div>
 

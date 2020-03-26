@@ -7,13 +7,15 @@ from urllib.parse import urlparse, urlunparse
 
 from quart import (
     Quart,
-    websocket,
+    Response,
+    make_response,
+    redirect,
     render_template,
     request,
-    redirect,
     url_for,
-    make_response,
+    websocket,
 )
+from werkzeug.datastructures import Headers
 
 from game import Game
 from storage import Cookies, Users
@@ -81,10 +83,10 @@ async def authenticate():
         return redirect(relative_path(dest) or "/")
 
     if not values.get("password") and values.get("username"):
-        return redirect(url_for("log_in"), dest=dest)
+        return redirect(url_for("log_in", dest=dest))
 
     if not type(values["password"]) is str and type(values["username"]) is str:
-        return redirect(url_for("log_in"), dest=dest)
+        return redirect(url_for("log_in", dest=dest))
 
     if len(values["password"]) > 1024:
         return await render_template(
@@ -128,6 +130,50 @@ def collect_websocket(func):
             await app.games[game_id].discard(username)
 
     return wrapper
+
+
+@app.route("/profilepic/<string:user>", methods=["GET"])
+async def profilepic(user):
+    img_blob, img_mimetype = USERS.profile_pic(user)
+    if img_blob is None:
+        return redirect("/static/img/profile-default.png")
+    headers = Headers()
+    headers.add("Content-Disposition", "inline", filename=user)
+    return Response(img_blob, mimetype=img_mimetype, headers=headers)
+
+
+@app.route("/profile/me/", methods=["GET"])
+@authenticated
+async def my_profile():
+    return await render_template("profile.html", user=get_user(request))
+
+
+@app.route("/profile/me/", methods=["POST"])
+@authenticated
+async def upload_profile():
+    user = get_user(request)
+    files = await request.files
+    new_picture = files.get("profile-picture")
+    if new_picture is None:
+        return await render_template(
+            "profile.html", user=user, picture_error="Please provide an image."
+        )
+    if not check_filetype(new_picture, ("image/jpeg", "image/png", "image/gif")):
+        return await render_template(
+            "profile.html", user=user, picture_error="Invalid image type."
+        )
+    img_blob = new_picture.read(2_000_000)  # base-10 2 MB
+    if new_picture.read(1):  # not at end of file
+        return await render_template(
+            "profile.html", user=user, picture_error="Image is too large."
+        )
+    USERS.set_profile(user, img_blob, new_picture.content_type)
+    return redirect(url_for("my_profile"))
+
+
+def check_filetype(some_file, allowed_file_types):
+    file_type = some_file.content_type
+    return file_type is not None and file_type in allowed_file_types
 
 
 @app.websocket("/play/<int:game_id>/ws")

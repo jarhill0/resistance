@@ -154,7 +154,10 @@ class Cookies(Storage):
 
 class Users(Storage):
     TABLE_NAME = "users"
-    TABLE_SCHEMA = "username_lower TEXT PRIMARY KEY, username TEXT, passwd_hash TEXT NOT NULL, salt TEXT NOT NULL"
+    TABLE_SCHEMA = (
+        "username_lower TEXT PRIMARY KEY, username TEXT, passwd_hash TEXT NOT NULL, salt TEXT NOT NULL, "
+        "profile_pic BLOB, pic_mimetype TEXT"
+    )
 
     def register(self, username, password):
         """Check if a user can be registered, and if so, register them."""
@@ -170,7 +173,7 @@ class Users(Storage):
             salt = gen_salt()
             passwd_hash = hash_password(password, salt)
             cursor.execute(
-                "INSERT INTO {} VALUES (?, ?, ?, ?)".format(self.TABLE_NAME),
+                f"INSERT INTO {self.TABLE_NAME} (username_lower, username, passwd_hash, salt) VALUES (?, ?, ?, ?)",
                 (username.lower(), username, passwd_hash, salt),
             )
 
@@ -188,3 +191,24 @@ class Users(Storage):
             true_username, passwd_hash, salt = user_row
             if passwd_hash == hash_password(password, salt):
                 return true_username
+
+    def profile_pic(self, username):
+        """Return a user's profile picture."""
+        username = username.lower()
+        with self.cursor as cursor:
+            row = cursor.execute(
+                f"SELECT profile_pic, pic_mimetype FROM {self.TABLE_NAME} WHERE username_lower=?",
+                (username,),
+            ).fetchone()
+            if row is None:
+                return None, None
+            return row
+
+    def set_profile(self, username, picture, mimetype):
+        """Set a user's profile picture."""
+        username = username.lower()
+        with self.cursor as cursor:
+            cursor.execute(
+                f"UPDATE {self.TABLE_NAME} SET profile_pic=?, pic_mimetype=? WHERE username_lower=?",
+                (picture, mimetype, username),
+            )

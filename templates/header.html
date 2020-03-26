@@ -1,12 +1,19 @@
-<div style="text-align: right">
-    {% if user is defined and user %}
-        Logged in as {{ user }}.
-        <a onclick="document.getElementById('logOutForm').submit()" href="javascript:"
-           style="margin-top: 1rem; margin-right: 1rem;">
-            Log out</a>
-        <form action="{{ url_for('log_out') }}" method="post" id="logOutForm"></form>
-    {% else %}
-        <a href="{{ url_for('log_in') }}"
-           style="margin-top: 1rem; margin-right: 1rem;">Log In </a>
-    {% endif %}
+<div class="container-fluid">
+    <div class="row justify-content-between">
+        <div class="col-4" style="text-align: left">
+            <a href="/">The Resistance</a>
+        </div>
+        <div class="col-4" style="text-align: right">
+            {% if user is defined and user %}
+                Logged in as <a href="{{ url_for('my_profile') }}">{{ user }}</a>.
+                <a onclick="document.getElementById('logOutForm').submit()" href="javascript:"
+                   style="margin-top: 1rem; margin-right: 1rem;">
+                    Log out</a>
+                <form action="{{ url_for('log_out') }}" method="post" id="logOutForm"></form>
+            {% else %}
+                <a href="{{ url_for('log_in') }}"
+                   style="margin-top: 1rem; margin-right: 1rem;">Log In </a>
+            {% endif %}
+        </div>
+    </div>
 </div>

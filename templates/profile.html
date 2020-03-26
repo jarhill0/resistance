@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Edit Profile</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
+          integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+</head>
+<body>
+{% include 'header.html' %}
+<div class="container">
+    <div class="row">
+        <div class="col">
+            <h3>Profile picture</h3>
+            <img src="{{ url_for('profilepic', user=user) }}" alt="your profile picture" width="100px">
+
+            <form method="post" action="{{ url_for('upload_profile') }}" enctype="multipart/form-data">
+                <div class="form-group">
+                    <label for="pic-upload">New profile picture</label>
+                    <input type="file" class="form-control-file" id="pic-upload" name="profile-picture"
+                           accept="image/png, image/jpeg, image/gif" required>
+                    <small class="form-text text-muted">Supported file types: PNG, JPG, GIF (max 2MB)</small>
+                </div>
+                <button type="submit" class="btn btn-primary">Submit</button>
+            </form>
+            {{ picture_error if picture_error is defined else '' }}
+        </div>
+    </div>
+</div>
+</body>
+</html>

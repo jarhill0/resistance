@@ -35,6 +35,21 @@
         ul {
             list-style: none;
         }
+
+        .pfp-img {
+            max-width: 100%;
+            max-height: 100%;
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%) translateX(-50%);
+        }
+
+        .pfp-div {
+            height: 100px;
+            width: 100px;
+            margin: 5px auto;
+            position: relative;
+        }
     </style>
 </head>
 <body>
@@ -166,14 +181,28 @@
         startButton.disabled = lobbySize < 5 || lobbySize > 10;
     }
 
+    const PROFILE_PICTURE_URL = "{{ url_for('profilepic', user='PLACEHOLDER') }}";
+
     function set_players(plyrs) {
         const playersDiv = document.getElementById("players");
         playersDiv.textContent = '';
         plyrs.forEach(player => {
             const col = document.createElement("div");
             col.classList.add("col");
+            col.classList.add("justify-content-center");
             col.classList.add("namePlate");
             col.id = nameplate_id(player);
+
+            const pfpDiv = document.createElement("div");
+            pfpDiv.classList.add("pfp-div");
+
+            const profileImage = document.createElement("img");
+            profileImage.src = PROFILE_PICTURE_URL.replace('PLACEHOLDER', player);
+            profileImage.classList.add("pfp-img");
+            pfpDiv.appendChild(profileImage);
+            col.appendChild(pfpDiv);
+
+            col.appendChild(document.createElement("br"));
 
             const nameSpan = document.createElement("span");
             nameSpan.innerText = player;
