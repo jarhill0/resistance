@@ -357,7 +357,6 @@
 
     function game_over(update) {
         {# TODO: suspense of revealing results — require group consent #}
-        document.getElementsByTagName("body")[0].style.background = update.resistance_won ? "var(--resistance-deep)" : "var(--spies-deep)";
         const currentStatus = document.getElementById("currentStatus");
 
         currentStatus.innerText = update.resistance_won ?
