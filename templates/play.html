@@ -37,18 +37,16 @@
         }
 
         .pfp-img {
-            max-width: 100%;
-            max-height: 100%;
-            position: absolute;
-            top: 50%;
-            transform: translateY(-50%) translateX(-50%);
+            height: 100%;
+            width: 100%;
+            object-fit: contain;
+            /* HOLY COW! https://stackoverflow.com/a/30794589/ */
         }
 
         .pfp-div {
             height: 100px;
             width: 100px;
             margin: 5px auto;
-            position: relative;
         }
     </style>
 </head>
