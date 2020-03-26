@@ -6,6 +6,11 @@
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
           integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <style>
+        .col {
+            margin: 3rem;
+        }
+    </style>
 </head>
 <body>
 {% include 'header.html' %}
@@ -29,6 +34,7 @@
     </div>
     <div class="row">
         <div class="col">
+            <h3>Change password</h3>
             <form method="post" action="{{ url_for('change_password') }}" onsubmit="return validatePassword()">
                 <div class="form-group">
                     <label for="oldPassword">Old password</label>
