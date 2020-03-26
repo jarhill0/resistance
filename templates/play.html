@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Play The Resistance!</title>
+    <title>Play The Reptilians!</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
           integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
@@ -12,16 +12,25 @@
             text-align: center;
         }
 
+        :root {
+            --spies: green;
+            --resistance: skyblue;
+            --spies-deep: darkgreen;
+            --resistance-deep: deepskyblue;
+            --spies-light: lightgreen;
+            --resistance-light: lightskyblue;
+        }
+
         #board {
             border: solid;
         }
 
         .passed {
-            background: lightskyblue;
+            background: var(--resistance-light);
         }
 
         .failed {
-            background: lightpink;
+            background: var(--spies-light);
         }
 
         .active {
@@ -95,11 +104,11 @@
                         <div class="col" id="votetrack1">2</div>
                         <div class="col" id="votetrack2">3</div>
                         <div class="col" id="votetrack3">4</div>
-                        <div class="col" id="votetrack4" style="background: lightcoral">5</div>
+                        <div class="col" id="votetrack4" style="background: var(--spies-light)">5</div>
                     </div>
                 </div>
                 <div class="col-4" id="player_makeup" style="display: none;">
-                    <span id="num_players"></span> Players &bull; <span id="num_spies"></span> Spies
+                    <span id="num_players"></span> Humans &bull; <span id="num_spies"></span> Reptilians
                 </div>
             </div>
         </div>
@@ -155,17 +164,17 @@
         if (update.is_spy) {
             alignment.appendChild(document.createTextNode("You are a\u00A0"));
             const bold = document.createElement("b");
-            bold.innerText = "spy";
-            bold.style.color = "deeppink";
+            bold.innerText = "reptilian";
+            bold.style.color = "var(--spies-deep)";
             alignment.appendChild(bold);
-            alignment.appendChild(document.createTextNode(`! The spies are ${list(update.spies)}.`));
+            alignment.appendChild(document.createTextNode(`! The reptilians are ${list(update.spies)}.`));
 
-            update.spies.forEach(spy => document.getElementById(nameplate_id(spy)).style.background = "pink");
+            update.spies.forEach(spy => document.getElementById(nameplate_id(spy)).style.background = "var(--spies-light)");
         } else {
             alignment.appendChild(document.createTextNode("You are\u00A0"));
             const bold = document.createElement("b");
-            bold.innerText = "Resistance";
-            bold.style.color = "deepskyblue";
+            bold.innerText = "Human";
+            bold.style.color = "var(--resistance-deep)";
             alignment.appendChild(bold);
             alignment.appendChild(document.createTextNode("."));
         }
@@ -348,16 +357,16 @@
 
     function game_over(update) {
         {# TODO: suspense of revealing results — require group consent #}
-        document.getElementsByTagName("body")[0].style.background = update.resistance_won ? "deepskyblue" : "deeppink";
+        document.getElementsByTagName("body")[0].style.background = update.resistance_won ? "var(--resistance-deep)" : "var(--spies-deep)";
         const currentStatus = document.getElementById("currentStatus");
 
         currentStatus.innerText = update.resistance_won ?
-            "The Resistance have succeeded!" : "The spies have defeated the Resistance!";
-        currentStatus.innerText += ` The spies were ${list(update.spies)}.`;
+            "The Humans have succeeded!" : "The reptilians have defeated the Humans!";
+        currentStatus.innerText += ` The reptilians were ${list(update.spies)}.`;
 
         Array.from(document.getElementsByClassName("namePlate")).forEach(namePlate => {
             const name = namePlate.getElementsByTagName("span")[0].innerText.trim();
-            namePlate.style.background = update.spies.indexOf(name) >= 0 ? "pink" : "skyblue";
+            namePlate.style.background = update.spies.indexOf(name) >= 0 ? "var(--spies)" : "var(--resistance)";
         });
 
         socket.onclose = () => {
@@ -410,7 +419,7 @@
 
         if (nomination.length !== missionSize) {
             document.getElementById("nominationErrorText").innerText =
-                `Wrong size mission! You have ${nomination.length} agents but you should have ${missionSize}.`;
+                `Wrong size mission! You have ${nomination.length} participants but you should have ${missionSize}.`;
         } else {
             send({'kind': 'nominate', 'nomination': nomination});
         }
