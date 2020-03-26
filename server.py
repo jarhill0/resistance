@@ -32,7 +32,7 @@ app.game_connections = defaultdict(set)
 
 def make_game(game_id):
     def destroy_game():
-        del app.games[game_id]
+        app.games.pop(game_id)
         app.game_connections[game_id].clear()
 
     app.games[game_id] = Game(app.game_connections[game_id], when_finished=destroy_game)
@@ -127,7 +127,9 @@ def collect_websocket(func):
             return await func(queue, game_id, *args, **kwargs)
         finally:
             app.game_connections[game_id].discard((queue, username))
-            await app.games[game_id].discard(username)
+            game = app.games.get(game_id)
+            if game is not None:
+                await game.discard(username)
 
     return wrapper
 
