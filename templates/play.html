@@ -14,15 +14,21 @@
 
         :root {
             --spies: green;
-            --resistance: skyblue;
+            --resistance: #c16519;
             --spies-deep: darkgreen;
-            --resistance-deep: deepskyblue;
+            --resistance-deep: #994200;
             --spies-light: lightgreen;
-            --resistance-light: lightskyblue;
+            --resistance-light: #fab987;
+        }
+
+        body {
+            background-image: url({{ url_for('static', filename='img/background.svg') }});
+            background-size: cover;
         }
 
         #board {
             border: solid;
+            background: white;
         }
 
         .passed {
