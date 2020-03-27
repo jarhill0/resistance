@@ -205,10 +205,10 @@
         if (update.is_spy) {
             alignment.appendChild(document.createTextNode("You are a\u00A0"));
             const bold = document.createElement("b");
-            bold.innerText = "reptilian";
+            bold.innerText = "Reptilian";
             bold.style.color = "var(--spies-deep)";
             alignment.appendChild(bold);
-            alignment.appendChild(document.createTextNode(`! The reptilians are ${list(update.spies)}.`));
+            alignment.appendChild(document.createTextNode(`! The Reptilians are ${list(update.spies)}.`));
 
             update.spies.forEach(spy => document.getElementById(nameplate_id(spy)).style.background = "var(--spies-light)");
         } else {
@@ -480,8 +480,8 @@
         const gameModal = $('#gameModal');
         gameModal.on('hidden.bs.modal', function (e) {
             currentStatus.innerText = update.resistance_won ?
-                "The Humans have succeeded!" : "The reptilians have defeated the Humans!";
-            currentStatus.innerText += ` The reptilians were ${list(update.spies)}.`;
+                "The Humans have succeeded!" : "The Reptilians have defeated the Humans!";
+            currentStatus.innerText += ` The Reptilians were ${list(update.spies)}.`;
 
             Array.from(document.getElementsByClassName("namePlate")).forEach(namePlate => {
                 const name = namePlate.getElementsByTagName("span")[0].innerText.trim();
