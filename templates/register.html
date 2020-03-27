@@ -14,7 +14,7 @@
     Or <a href="{{ url_for('log_in', dest=dest) }}">log in</a>.
 </div>
 
-<form action="{{ url_for('register') }}" method="post" class="container" onsubmit="return validate()">
+<form action="{{ url_for('register', dest=dest) }}" method="post" class="container" onsubmit="return validate()">
     <div class="form-group"><label for="username">Username</label>
         <input class="form-control" id="username" type="text" required
                maxlength="20"
