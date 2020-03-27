@@ -468,7 +468,7 @@
 
         const results = document.createElement("p");
         results.innerText = `The mission ${update.mission_succeeded ? "passed" : "failed"
-        }${update.num_fails > 0 ? ` with ${update.num_fails} fails` : ""}.`;
+        }${update.num_fails > 0 ? ` with ${update.num_fails} fail${update.num_fails > 1 ? "s" : ""}` : ""}.`;
 
         const gameModal = $('#gameModal');
         document.getElementById("gameModalTitle").innerText = "Mission results";
