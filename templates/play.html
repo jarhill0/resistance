@@ -219,10 +219,6 @@
             alignment.appendChild(bold);
             alignment.appendChild(document.createTextNode("."));
         }
-        const gameModal = $('#gameModal');
-        gameModal.on('hidden.bs.modal', function (e) {
-            // noop. overwritten in game_over
-        })
 
         document.getElementById("gameModalTitle").innerText = "Game starting";
         document.getElementById("gameModalBody").appendChild(alignment.cloneNode(true));
@@ -492,9 +488,7 @@
                 namePlate.style.background = update.spies.indexOf(name) >= 0 ? "var(--spies)" : "var(--resistance)";
             });
 
-            gameModal.on('hidden.bs.modal', function (e) {
-                // no-op
-            });
+            gameModal.off();
 
             document.getElementById("gameModalTitle").innerText = "Game over";
             document.getElementById("gameModalBody").textContent = '';
