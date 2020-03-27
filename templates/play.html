@@ -220,6 +220,7 @@
             alignment.appendChild(document.createTextNode("."));
         }
 
+        const gameModal = $('#gameModal');
         document.getElementById("gameModalTitle").innerText = "Game starting";
         document.getElementById("gameModalBody").appendChild(alignment.cloneNode(true));
         gameModal.modal()
