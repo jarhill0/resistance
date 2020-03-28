@@ -255,11 +255,11 @@
             pfpDiv.appendChild(profileImage);
             col.appendChild(pfpDiv);
 
-            col.appendChild(document.createElement("br"));
-
             const nameSpan = document.createElement("span");
             nameSpan.innerText = player;
             col.appendChild(nameSpan);
+
+            col.appendChild(document.createElement("br"));
 
             col.appendChild(token_image("{{ url_for('static', filename='img/leader.png') }}", ["leaderToken"]));
             col.appendChild(token_image("{{ url_for('static', filename='img/gun.png') }}", ["gunToken"]));
@@ -529,7 +529,7 @@
 
         who.forEach(agent => {
             const nameplate = document.getElementById(nameplate_id(agent));
-            nameplate.getElementsByClassName(kind)[0].style.display = "block";
+            nameplate.getElementsByClassName(kind)[0].style.display = "inline";
         });
     }
 
