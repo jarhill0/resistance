@@ -8,6 +8,7 @@ from urllib.parse import urlparse, urlunparse
 from quart import (
     Quart,
     Response,
+    abort,
     make_response,
     redirect,
     render_template,
@@ -142,6 +143,13 @@ async def profilepic(user):
     headers = Headers()
     headers.add("Content-Disposition", "inline", filename=user)
     return Response(img_blob, mimetype=img_mimetype, headers=headers)
+
+
+@app.route("/reptilepic/<int:number>", methods=["GET"])
+async def reptile_pic(number):
+    if 1 <= number <= 4:
+        return redirect(url_for('static', filename=f'img/reptile-{number}.png'))
+    abort(404, 'That reptile picture doesn\'t exist.')
 
 
 @app.route("/profile/me/", methods=["GET"])

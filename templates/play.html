@@ -170,6 +170,12 @@
 
     let lobbySize = -1;
 
+    const reptiles = [
+        {% for r in range(1, 5) %}
+            "{{ url_for('reptile_pic', number=r) }}",
+        {% endfor %}
+    ];
+
     const socket = new WebSocket('{{url_for("ws", game_id=game_id) }}');
 
     const HANDLERS = {
@@ -475,18 +481,23 @@
     }
 
     function game_over(update) {
-        {# TODO: suspense of revealing results — require group consent #}
         const currentStatus = document.getElementById("currentStatus");
 
         const gameModal = $('#gameModal');
         gameModal.on('hidden.bs.modal', function (e) {
+            clearTokens("leaderToken");
+
             currentStatus.innerText = update.resistance_won ?
                 "The Humans have succeeded!" : "The Reptilians have defeated the Humans!";
             currentStatus.innerText += ` The Reptilians were ${list(update.spies)}.`;
 
             Array.from(document.getElementsByClassName("namePlate")).forEach(namePlate => {
                 const name = namePlate.getElementsByTagName("span")[0].innerText.trim();
-                namePlate.style.background = update.spies.indexOf(name) >= 0 ? "var(--spies)" : "var(--resistance)";
+                const is_spy = update.spies.indexOf(name) >= 0;
+                namePlate.style.background = is_spy ? "var(--spies)" : "var(--resistance)";
+                if (is_spy) {
+                    namePlate.getElementsByClassName("pfp-img")[0].src = get_reptile();
+                }
             });
 
             gameModal.off();
@@ -500,6 +511,13 @@
         socket.onclose = () => {
         };
         socket.close();
+    }
+
+    function get_reptile() {
+        const index = Math.floor(Math.random() * reptiles.length);
+        const reptile = reptiles[index];
+        reptiles.splice(index, 1);
+        return reptile;
     }
 
     function start_game() {
