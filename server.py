@@ -138,7 +138,7 @@ def collect_websocket(func):
 async def profilepic(user):
     img_blob, img_mimetype = USERS.profile_pic(user)
     if img_blob is None:
-        return redirect("/static/img/profile-default.png")
+        return redirect(url_for('static', filename='img/profile-default.png'))
     headers = Headers()
     headers.add("Content-Disposition", "inline", filename=user)
     return Response(img_blob, mimetype=img_mimetype, headers=headers)
