@@ -499,9 +499,16 @@
         gameModal.on('hidden.bs.modal', function (e) {
             clearTokens("leaderToken");
 
-            currentStatus.innerText = update.resistance_won ?
-                "The Humans have succeeded!" : "The Reptilians have defeated the Humans!";
-            currentStatus.innerText += ` The Reptilians were ${list(update.spies)}.`;
+            currentStatus.textContent = '';
+            if (update.resistance_won) {
+                const resistance = [];
+                players.forEach(player => {
+                    if (update.spies.indexOf(player) < 0) resistance.push(player)
+                });
+                currentStatus.innerText = `The human race will live on for now, thanks to ${list(resistance)}.`;
+            } else {
+                currentStatus.innerText = `Bow down to your new Reptilian overlords: ${list(update.spies)}!`;
+            }
 
             Array.from(document.getElementsByClassName("namePlate")).forEach(namePlate => {
                 const name = namePlate.getElementsByTagName("span")[0].innerText.trim();
@@ -514,9 +521,16 @@
 
             gameModal.off();
 
+            const img = document.createElement("img");
+            img.style.width = "100%";
+            img.src = update.resistance_won ? "{{ url_for('static', filename='img/human-victory.webp') }}" :
+                "{{ url_for('static', filename='img/reptilian-victory.gif') }}";
+
             document.getElementById("gameModalTitle").innerText = "Game over";
-            document.getElementById("gameModalBody").textContent = '';
-            document.getElementById("gameModalBody").appendChild(currentStatus.cloneNode(true));
+            const gameModalBody = document.getElementById("gameModalBody");
+            gameModalBody.textContent = '';
+            gameModalBody.appendChild(currentStatus.cloneNode(true));
+            gameModalBody.appendChild(img);
             gameModal.modal()
         });
 
