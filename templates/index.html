@@ -14,17 +14,13 @@
 </head>
 <body>
 {% include "header.html" %}
-<h1>The <span style="color: darkgreen">Reptilians</span></h1>
 <div class="container">
-    <div class="row">
-        <div class="col-3-md">
-            <div class="embed-responsive embed-responsive-16by9">
-                <iframe class="embed-responsive-item" src="{{ url_for('live_games') }}" allowfullscreen></iframe>
-            </div>
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <img src="{{ url_for('static', filename='img/identification.png') }}" alt="Reptilian Identification"
+                 style="width:100%">
         </div>
     </div>
-</div>
-<div class="container">
     <div class="row justify-content-center">
         <form class="col-md-3" method="get" action="{{ url_for('go_to_game') }}"
               style="margin-top: 5rem; margin-bottom: 2rem;">
@@ -47,12 +43,6 @@
             <div class="embed-responsive embed-responsive-21by9">
                 <iframe src="{{ url_for('live_games') }}" class="embed-responsive-item"></iframe>
             </div>
-        </div>
-    </div>
-    <div class="row justify-content-center">
-        <div class="col">
-            <img src="{{ url_for('static', filename='img/identification.png') }}" alt="Reptilian Identification"
-                 style="width:100%">
         </div>
     </div>
 </div>
