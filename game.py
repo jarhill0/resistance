@@ -11,10 +11,11 @@ class GameStates(Enum):
 
 
 class Game:
-    def __init__(self, connections, when_finished=None):
+    def __init__(self, connections, when_started=None, when_finished=None):
         self.connections = connections  # mutable reference outside of this scope.
         self.players = ()  # should be immutable or owned by this class
         self.lobby = set()
+        self.when_started = when_started
         self.when_finished = when_finished
         self.state = GameStates.NOT_STARTED
         self.spies = None
@@ -79,6 +80,9 @@ class Game:
 
         if not (5 <= len(self.players) <= 10):
             return  # client made a bad request
+
+        if self.when_started is not None:
+            self.when_started()
 
         self.choose_mission_leader()
         self.make_roles()

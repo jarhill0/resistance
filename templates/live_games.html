@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Live Games</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
+          integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta http-equiv="refresh" content="20">
+</head>
+<body>
+{% if games %}
+    <b>Spectate a game</b>
+{% endif %}
+<ul>
+    {% for game in games %}
+        <li>
+            <a href="{{ url_for('play', game_id=game) }}">Game {{ game }}</a>
+        </li>
+    {% endfor %}
+</ul>
+</body>
+</html>

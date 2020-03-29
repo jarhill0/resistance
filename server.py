@@ -29,14 +29,23 @@ USERS = Users()
 app = Quart(__name__)
 app.games = dict()
 app.game_connections = defaultdict(set)
+app.games_playing = set()
 
 
 def make_game(game_id):
     def destroy_game():
         app.games.pop(game_id)
         app.game_connections[game_id].clear()
+        app.games_playing.discard(game_id)
 
-    app.games[game_id] = Game(app.game_connections[game_id], when_finished=destroy_game)
+    def list_game():
+        app.games_playing.add(game_id)
+
+    app.games[game_id] = Game(
+        app.game_connections[game_id],
+        when_finished=destroy_game,
+        when_started=list_game,
+    )
 
 
 def relative_path(url):
@@ -262,6 +271,11 @@ async def go_to_game():
     except ValueError:
         return redirect(url_for("index"))
     return redirect(url_for("play", game_id=game_id))
+
+
+@app.route("/live_games/", methods=["GET"])
+async def live_games():
+    return await render_template("live_games.html", games=app.games_playing)
 
 
 @app.route("/sign_up", methods=["POST"])
