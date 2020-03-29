@@ -257,6 +257,10 @@ async def go_to_game():
     game_id = values.get("game_id")
     if game_id is None:
         return redirect(url_for("index"))
+    try:
+        game_id = int(game_id)
+    except ValueError:
+        return redirect(url_for("index"))
     return redirect(url_for("play", game_id=game_id))
 
 
