@@ -263,9 +263,9 @@ class Game:
         """Assign roles to players."""
         num_roles = len(self.players)
 
-        if num_roles == 5 or 6:
+        if num_roles == 5 or num_roles == 6:
             num_spies = 2
-        elif num_roles == 7 or 8:
+        elif num_roles == 7 or num_roles == 8:
             num_spies = 3
         else:
             num_spies = 4
