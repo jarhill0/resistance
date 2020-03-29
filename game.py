@@ -57,10 +57,7 @@ class Game:
             await client.put(message)
 
     def can_join(self, player_id):
-        if self.state == GameStates.NOT_STARTED:
-            return True
-        else:
-            return player_id in self.players
+        return True
 
     async def join(self, player_id):
         if self.state == GameStates.NOT_STARTED:
@@ -93,13 +90,18 @@ class Game:
             "num_spies": len(self.spies),
             "agents_per_round": NUM_AGENTS_DICT[len(self.players)],
         }
-        spy_message = dict(is_spy=True, spies=self.spies, **base_message,)
-        resistance_message = dict(is_spy=False, **base_message)
+        spy_message = dict(
+            is_spy=True, spies=self.spies, is_player=True, **base_message,
+        )
+        resistance_message = dict(is_spy=False, is_player=True, **base_message)
+        spectator_message = dict(is_player=False, **base_message)
         for connection, player_id in self.connections:
             if player_id in self.spies:
                 await connection.put(spy_message)
-            else:
+            elif player_id in self.players:
                 await connection.put(resistance_message)
+            else:
+                await connection.put(spectator_message)
         await self.start_round()
 
     async def start_round(self):
@@ -144,7 +146,7 @@ class Game:
                 self.last_state_change_message = message
 
     async def voting_mission(self, player_id, move):
-        if move.get("kind") == "nomination_vote":
+        if move.get("kind") == "nomination_vote" and player_id in self.players:
             self.nom_votes[player_id] = bool(move.get("vote"))
             if len(self.nom_votes) == len(self.players):
                 await self.process_votes()
@@ -232,9 +234,13 @@ class Game:
             "agents_per_round": NUM_AGENTS_DICT[len(self.players)],
         }
         if player_id in self.spies:
-            await connection.put(dict(is_spy=True, spies=self.spies, **base_message,))
+            await connection.put(
+                dict(is_spy=True, spies=self.spies, is_player=True, **base_message,)
+            )
+        elif player_id in self.players:
+            await connection.put(dict(is_spy=False, is_player=True, **base_message))
         else:
-            await connection.put(dict(is_spy=False, **base_message))
+            await connection.put(dict(is_player=False, **base_message))
 
         for mission in self.mission_results:
             await connection.put(mission)
