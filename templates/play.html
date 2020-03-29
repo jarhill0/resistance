@@ -267,8 +267,8 @@
 
             col.appendChild(document.createElement("br"));
 
-            col.appendChild(token_image("{{ url_for('static', filename='img/leader.png') }}", ["leaderToken"]));
-            col.appendChild(token_image("{{ url_for('static', filename='img/gun.png') }}", ["gunToken"]));
+            col.appendChild(token_image("{{ url_for('static', filename='img/leader.png') }}", "Mission leader", ["leaderToken"]));
+            col.appendChild(token_image("{{ url_for('static', filename='img/gun.png') }}", "Mission nominee", ["gunToken"]));
 
             playersDiv.appendChild(col);
         });
@@ -528,9 +528,11 @@
         }
     }
 
-    function token_image(src, class_list = []) {
+    function token_image(src, alt_text, class_list = []) {
         const img = document.createElement("img");
         img.src = src;
+        img.alt = alt_text;
+        img.title = alt_text;
         img.style.display = "none";
         img.style.height = "40px";
         class_list.forEach(klass => img.classList.add(klass));
