@@ -610,7 +610,11 @@
     }
 
     function list(words) {
-        if (words.length === 2) {
+        if (words.length === 0) {
+            return "";
+        } else if (words.length === 1) {
+            return words[0]
+        } else if (words.length === 2) {
             return `${words[0]} and ${words[1]}`;
         }
         let output = "";
