@@ -158,6 +158,7 @@
 </div>
 <script>
     const user = "{{ user }}";
+    const alert_sound = new Audio("{{ url_for('static', filename='audio/whistle.m4a') }}");
     let players = [];
     let missionSize = -1;
     let is_player = false;
@@ -315,6 +316,8 @@
             const nominationErrorText = document.createElement("span");
             nominationErrorText.id = "nominationErrorText";
             currentStatus.appendChild(nominationErrorText)
+
+            alert_sound.play();
         } else {
             currentStatus.innerText = `${update.mission_leader} is nominating a mission.`;
         }
@@ -360,6 +363,8 @@
             const voteStatus = document.createElement("span");
             voteStatus.id = "voteStatus";
             currentStatus.appendChild(voteStatus);
+
+            alert_sound.play();
         }
     }
 
@@ -454,6 +459,8 @@
             const missionStatus = document.createElement("span");
             missionStatus.id = "missionStatus";
             currentStatus.appendChild(missionStatus);
+
+            alert_sound.play();
         } else {
             currentStatus.innerText = `A mission is occurring with ${list(update.mission)}.`
         }
