@@ -1,5 +1,6 @@
 from enum import Enum, auto
 from random import randint, sample
+from time import monotonic
 
 
 class GameStates(Enum):
@@ -8,6 +9,7 @@ class GameStates(Enum):
     VOTING_MISSION = auto()
     RUNNING_MISSION = auto()
     GAME_OVER = auto()
+    ABORTED = auto()
 
 
 class Game:
@@ -29,6 +31,7 @@ class Game:
         self.nominations_rejected = 0
         self.mission_results = []
         self.last_state_change_message = dict()
+        self.last_communication = monotonic()
 
         self.STATES = {
             GameStates.NOT_STARTED: self.not_started,
@@ -36,9 +39,11 @@ class Game:
             GameStates.VOTING_MISSION: self.voting_mission,
             GameStates.RUNNING_MISSION: self.running_mission,
             GameStates.GAME_OVER: self.game_is_over,
+            GameStates.ABORTED: lambda player_id, move: 0,  # do nothing
         }
 
     async def player_move(self, player_id, move, queue):
+        self.communicated()
         if type(move) is not dict:
             return
         if move.get("kind") == "catch_up":
@@ -57,6 +62,7 @@ class Game:
     async def broadcast(self, message):
         for client, _ in self.connections:
             await client.put(message)
+        self.communicated()
 
     def can_join(self, player_id):
         return True
@@ -239,6 +245,12 @@ class Game:
         if self.when_finished is not None:
             self.when_finished()
 
+    def abort(self):
+        """Provide the ability to forcibly abort the game from an external caller."""
+        self.state = GameStates.ABORTED
+        if self.when_finished is not None:
+            self.when_finished()
+
     async def catch_up(self, player_id, connection):
         state = self.state
         if state in (GameStates.NOT_STARTED, GameStates.GAME_OVER):
@@ -272,6 +284,9 @@ class Game:
         )
 
         await connection.put(self.last_state_change_message)
+
+    def communicated(self):
+        self.last_communication = monotonic()
 
     def make_roles(self):
         """Assign roles to players."""

@@ -3,6 +3,7 @@ from collections import defaultdict
 from functools import wraps
 from json import dumps, loads
 from string import ascii_letters, digits
+from time import monotonic
 from urllib.parse import urlparse, urlunparse
 
 from quart import (
@@ -46,6 +47,15 @@ def make_game(game_id):
         when_finished=destroy_game,
         when_started=list_game,
     )
+
+
+def prune_live_games():
+    to_abort = set()
+    for game_id, game in app.games.items():
+        if monotonic() - game.last_communication > 60 * 60 * 12:  # 12 hours
+            to_abort.add(game)
+    for game in to_abort:
+        game.abort()
 
 
 def relative_path(url):
@@ -248,6 +258,8 @@ async def ws(queue, game_id):
 @app.route("/play/<int:game_id>/")
 @authenticated
 async def play(game_id):
+    prune_live_games()
+
     if game_id not in app.games:
         make_game(game_id)
 
@@ -327,6 +339,7 @@ async def sign_up():
 
 @app.route("/", methods=["GET"])
 async def index():
+    prune_live_games()
     return await render_template("index.html", user=get_user(request))
 
 
