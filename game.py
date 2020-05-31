@@ -15,6 +15,7 @@ class Game:
         self.connections = connections  # mutable reference outside of this scope.
         self.players = ()  # should be immutable or owned by this class
         self.lobby = set()
+        self.ready = set()
         self.when_started = when_started
         self.when_finished = when_finished
         self.state = GameStates.NOT_STARTED
@@ -48,7 +49,7 @@ class Game:
     async def not_started(self, player_id, move):
         kind = move.get("kind")
         if kind == "start":
-            await self.start()
+            await self.mark_ready(player_id)
 
     async def game_is_over(self, player_id, move):
         pass
@@ -74,12 +75,25 @@ class Game:
                 await self.broadcast(
                     {"kind": "lobby_update", "players": list(self.lobby)}
                 )
+                await self.start()
+
+    async def mark_ready(self, player_id):
+        self.ready.add(player_id)
+        await self.broadcast(
+            {"kind": "ready_update", "waiting": list(self.lobby - self.ready)}
+        )
+        await self.start()
 
     async def start(self):
-        self.players = tuple(set(name for _, name in self.connections))
+        players = set(name for _, name in self.connections)
 
-        if not (5 <= len(self.players) <= 10):
+        if not players.issubset(self.ready):
+            return  # not everyone is ready. bail.
+
+        if not (5 <= len(players) <= 10):
             return  # client made a bad request
+
+        self.players = tuple(players)
 
         if self.when_started is not None:
             self.when_started()
